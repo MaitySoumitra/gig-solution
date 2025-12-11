@@ -1,13 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import axiosClient from "../../../api/axiosClient";
+import axiosClient from "../../../../api/axiosClient";
 
 // --- INTERFACES ---
 
 interface UserProfile {
     name: string;
     email: string;
-    role: "admin" | "tutor" | "student" | "institute";
+    role: "super-admin" | "admin" | "Designer" | "Developer" | "Quality Testing" | "Bussiness Analyst"; // ✅ Added missing roles
     lastLogin?: number | null;
 }
 

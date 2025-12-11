@@ -59,9 +59,7 @@ const loginUser= async(req, res)=>{
         else if(user.role==='admin'){
             redirectTo='/admin/dashboard';           
         }
-        else {
-            redirectTo=`/${user.role.toLowerCase().replace(/\s+/g, '')}/dashboard`
-        }
+       
        
         res.status(200).json({
             message: 'Login success',
@@ -87,9 +85,45 @@ const getProfile = (req,res)=>{
     })
 }
 
+const searchUsers = async (req, res) => {
+    // 1. Get the search query from the request, typically via query parameters (?query=...)
+    const { query } = req.query; 
+
+    if (!query || query.length < 2) {
+        // Require a minimum length for the search query to prevent massive database lookups
+        return res.status(400).json({ message: 'Search query must be at least 2 characters long.' });
+    }
+
+    try {
+        // 2. Define the search criteria
+        const searchCriteria = {
+            // $or operator allows searching across multiple fields
+            $or: [
+                // $regex performs pattern matching for substring search
+                // $options: 'i' makes the search case-insensitive
+                { name: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } }
+            ]
+        };
+
+        // 3. Execute the search
+        const users = await User.find(searchCriteria)
+            .select('_id name email role profilepicture') // Only return necessary fields
+            .limit(10); // Limit results to 10 for performance
+
+        // 4. Send the found users back to the frontend
+        res.status(200).json(users);
+
+    } catch (error) {
+        console.error('User search error:', error);
+        res.status(500).json({ message: 'Server error: Failed to search for users.' });
+    }
+};
+
 module.exports={
     loginUser,
     logoutUser,
     registerUser,
-    getProfile
+    getProfile,
+    searchUsers
 }

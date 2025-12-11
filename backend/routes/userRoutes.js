@@ -12,4 +12,6 @@ router.post('/register', protect, hasAdminPrivileges, userController.registerUse
 
 router.get('/profile', protect, userController.getProfile)
 
+router.get('/search', protect, userController.searchUsers);
+
 module.exports= router

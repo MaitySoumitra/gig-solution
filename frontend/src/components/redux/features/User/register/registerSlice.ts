@@ -2,7 +2,7 @@
 
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import axiosClient from "../../../api/axiosClient";
+import axiosClient from "../../../../api/axiosClient";
 
 interface UserProfile {
   _id?: string;

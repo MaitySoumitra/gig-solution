@@ -46,9 +46,7 @@ const createTask = async (req, res) => {
         res.status(500).json({ message: 'Server Error: Failed to create task' });
     }
 }
-
 const getTaskById = async (req, res) => {
-
     try {
         const task = await Task.findById(req.params.id)
             .populate('assignedTo', 'name email role')
@@ -70,14 +68,12 @@ const getTaskById = async (req, res) => {
         res.status(500).json({message: "Server error: failed to retrive task"})
     }
 }
-
 const moveTask = async(req, res)=>{
     const {newColumnId, newPostion}=req.body;
     const taskId=req.params.id;
 
     if(!newColumnId){
         return res.status(400).json({message: "new column id is required for movid task"})
-
     }
     try{
         const task= await Task.findById(taskId);
@@ -85,19 +81,16 @@ const moveTask = async(req, res)=>{
             return res.status(404).json({message: "Task is not found"})
         }
         const oldColumnId=task.column;
-
         const board=await Board.findById(task.board).select('members');
         const isMember = board.members.some(member=>member.toString()===req.user._id.toString())
 
         if(!isMember){
             return res.status(403).json({message: 'Access Denied . Not a board member'})
         }
-
         await Column.findByIdAndUpdate(
             oldColumnId,
             {$pull:{task: taskId}}
         )
-
         await Column.findByIdAndUpdate(
             newColumnId,
             {$push: {task:taskId}}
@@ -108,7 +101,6 @@ const moveTask = async(req, res)=>{
             action:`Move task from column ${oldColumnId} to ${newColumnId}`
         })
         await task.save()
-
         res.status(200).json({message: 'Task moved successfully!', taskId})
        
     }

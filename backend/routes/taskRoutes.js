@@ -1,10 +1,13 @@
-const express=require('express')
-const router=express.Router()
-const { getTaskById, moveTask} =require('../controller/taskController')
-const {protect}=require('../middleware/authMiddleware')
+// routes/taskRoutes.js
 
-router.get('/:id', protect, getTaskById)
+const express = require('express');
+const router = express.Router(); 
+const { getTaskById, moveTask } = require('../controller/taskController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.put('/:id/move', protect, moveTask)
+// Route to get and update a single task
+router.get('/:id', protect, getTaskById);
+router.put('/:id/move', protect, moveTask);
+// Add other routes like PUT /:id (edit details), POST /:id/comments, etc., here later.
 
 module.exports = router;

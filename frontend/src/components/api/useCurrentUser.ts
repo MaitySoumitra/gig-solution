@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useAppDispatch } from "../app/hook";
-import { setAuthState, logout } from "../features/User/login/loginSlice";
+import { useAppDispatch } from "../redux/app/hook";
+import { setAuthState, logout } from "../redux/features/User/login/loginSlice";
 
 export const useCurrentUser = () => {
     const dispatch = useAppDispatch();
