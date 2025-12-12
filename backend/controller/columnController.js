@@ -34,5 +34,16 @@ const  createColumn= async(req, res)=>{
         return res.status(500).json({message: 'Server error: failedto create column '})
     }
 }
+const fetchColumn= async(req, res)=>{
+    const {boardId}=req.params;
+    try{
+        const columns= await Column.find({board:boardId}).populate('task')
+        res.status(200).json(columns)
+    }
+    catch(error){
+        console.error('something went wrong', error)
+        res.status(500).json({message: "server error cant fetch columns "})
+    }
+}
 
-module.exports= {createColumn}
+module.exports= {createColumn, fetchColumn}

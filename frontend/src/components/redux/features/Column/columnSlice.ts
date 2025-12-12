@@ -28,7 +28,7 @@ export const addColumn = createAsyncThunk("column/addColumn", async ({ boardId, 
     }
 
 })
-export const fetchColumn = createAsyncThunk("column/fetchColumn", async (boardId: string, { rejectWithValue }) => {
+export const fetchColumn = createAsyncThunk<Column[], string>("column/fetchColumn", async (boardId: string, { rejectWithValue }) => {
     try {
         const res = await axiosClient.get(`/api/boards/${boardId}`)
         return res.data

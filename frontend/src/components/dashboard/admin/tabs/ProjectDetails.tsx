@@ -115,6 +115,7 @@ export const ProjectDetails = () => {
                                     </div>
                                 </div>
                             </div>
+                            {}
                             <div className="mt-4">
                                 {!showColumnInput ? (
                                     <button
