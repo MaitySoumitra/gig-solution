@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Task } from "../allType";
+import type { Task } from "../../../types/allType";
 import axiosClient from "../../../api/axiosClient";
 
 interface taskState {

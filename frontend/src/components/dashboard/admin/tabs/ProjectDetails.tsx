@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../redux/app/hook'
 import { addMember, fetchBoard } from '../../../redux/features/Board/boardSlice'
-
+import type { Task } from '../../../types/allType';
 
 
 import { addColumn, fetchColumn } from '../../../redux/features/Column/columnSlice';
 import { DashBoardHeader } from './DashBoardHeader';
 import { DasBoardBody } from './DashBoardBody';
+import { addTask } from '../../../redux/features/Task/taskSlice';
 
 export const ProjectDetails = () => {
 
@@ -21,6 +22,10 @@ export const ProjectDetails = () => {
     }
     const handaleAddColumn = (boardId: string, name: string) => {
         dispatch(addColumn({ boardId, name }))
+    }
+    const handaleAddTask=(boardId:string, columnId:string, taskData:Partial<Task>)=>{
+        dispatch(addTask({boardId,columnId, taskData}))
+
     }
 
     useEffect(() => {
@@ -52,6 +57,7 @@ export const ProjectDetails = () => {
                             <DasBoardBody 
                             column={column[b._id] || []} id={b._id} 
                             onAddColumn={handaleAddColumn} 
+                            onAddTask={handaleAddTask}
                             />
 
                         </div>

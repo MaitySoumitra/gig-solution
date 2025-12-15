@@ -3,7 +3,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import axiosClient from "../../../../api/axiosClient";
-import type { User } from "../../allType";
+import type { User } from "../../../../types/allType";
 
 interface RegisterState {
   user: User | null;

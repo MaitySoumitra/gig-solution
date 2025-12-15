@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit"
 import axiosClient from "../../../api/axiosClient";
-import type { Board } from "../allType";
+import type { Board } from "../../../types/allType";
 
 interface CreateBoardArgs {
     name: string;
