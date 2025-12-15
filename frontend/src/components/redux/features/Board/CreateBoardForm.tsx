@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hook"
 import { useForm } from "react-hook-form";
 import { createBoard } from './boardSlice'
-import { X } from '@phosphor-icons/react'; 
+import { X } from '@phosphor-icons/react';
 // NEW IMPORT
-import UserSearchInput from '../../../dashboard/common/UserSearchInput'; 
+import UserSearchInput from '../../../dashboard/common/UserSearchInput';
 
 // IMPORTANT: We no longer need 'membersInput' in BoardFormInputs as it's now handled by UserSearchInput
-interface BoardFormInputs{
+interface BoardFormInputs {
     name: string,
     // membersInput is REMOVED/made optional/unused here
 }
@@ -18,42 +18,42 @@ export const CreateBoardForm = () => {
     const dispatch = useAppDispatch();
     const { loading, error } = useAppSelector(state => state.board);
     const isPending = loading === 'pending';
-   
+
     const { register, handleSubmit, formState: { errors }, reset } = useForm<BoardFormInputs>(); // getValues/setValue are no longer needed for member input
     const [currentMembers, setCurrentMembers] = useState<{ _id: string; name: string }[]>([]);
-   const handleAddMember = (user: { _id: string; name: string }) => {
-    if (!currentMembers.find(member => member._id === user._id)) {
-        setCurrentMembers(prev => [...prev, user]);
-    }
-};
-
-// Remove member handler
-const handleRemoveMember = (idToRemove: string) => {
-    setCurrentMembers(prev => prev.filter(member => member._id !== idToRemove));
-};
-
-// When submitting, send only the IDs
-const onSubmit = (data: BoardFormInputs) => {
-    if (currentMembers.length === 0) {
-        alert("Please add at least one member.");
-        return;
-    }
-    const boardData = {
-        name: data.name,
-        members: currentMembers.map(member => member._id), // only IDs
-    };
-    dispatch(createBoard(boardData)).then((result) => {
-        if (createBoard.fulfilled.match(result)) {
-            reset();
-            setCurrentMembers([]);
-            alert(`Board "${result.payload.name}" created successfully`);
+    const handleAddMember = (user: { _id: string; name: string }) => {
+        if (!currentMembers.find(member => member._id === user._id)) {
+            setCurrentMembers(prev => [...prev, user]);
         }
-    });
-};
+    };
+
+    // Remove member handler
+    const handleRemoveMember = (idToRemove: string) => {
+        setCurrentMembers(prev => prev.filter(member => member._id !== idToRemove));
+    };
+
+    // When submitting, send only the IDs
+    const onSubmit = (data: BoardFormInputs) => {
+        if (currentMembers.length === 0) {
+            alert("Please add at least one member.");
+            return;
+        }
+        const boardData = {
+            name: data.name,
+            members: currentMembers.map(member => member._id), // only IDs
+        };
+        dispatch(createBoard(boardData)).then((result) => {
+            if (createBoard.fulfilled.match(result)) {
+                reset();
+                setCurrentMembers([]);
+                alert(`Board "${result.payload.name}" created successfully`);
+            }
+        });
+    };
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            
+
             {/* 1. BOARD NAME INPUT (Unchanged) */}
             <div className="flex flex-col">
                 <label htmlFor="name" className="font-medium mb-1 text-gray-700">Project Board Name</label>
@@ -69,10 +69,10 @@ const onSubmit = (data: BoardFormInputs) => {
             {/* 2. MEMBER INPUT (REPLACED) */}
             <div className="flex flex-col">
                 <label className="font-medium mb-1 text-gray-700">Add Members by Name or Email</label>
-                <UserSearchInput 
-    onUserSelect={handleAddMember} // updated
-    excludeUserIds={currentMembers.map(m => m._id)} // only pass IDs
-/>
+                <UserSearchInput
+                    onUserSelect={handleAddMember} // updated
+                    excludeUserIds={currentMembers.map(m => m._id)} // only pass IDs
+                />
             </div>
 
             {/* 3. DISPLAY CURRENT MEMBERS (Now showing placeholder for names) */}
@@ -83,16 +83,16 @@ const onSubmit = (data: BoardFormInputs) => {
                         {/* NOTE: If you store the full user object (name, email) instead of just the ID, 
                            you can display the actual name here for better UX. 
                            For now, we display the truncated ID. */}
-                    {currentMembers.map(member => (
-    <span 
-        key={member._id} 
-        className="inline-flex items-center text-xs font-medium bg-gray-300 text-gray-800 rounded-full pl-3 pr-1 py-1 cursor-pointer hover:bg-red-500 hover:text-white transition"
-        onClick={() => handleRemoveMember(member._id)}
-    >
-        {member.name} 
-        <X size={12} weight="bold" className="ml-1" />
-    </span>
-))}
+                        {currentMembers.map(member => (
+                            <span
+                                key={member._id}
+                                className="inline-flex items-center text-xs font-medium bg-gray-300 text-gray-800 rounded-full pl-3 pr-1 py-1 cursor-pointer hover:bg-red-500 hover:text-white transition"
+                                onClick={() => handleRemoveMember(member._id)}
+                            >
+                                {member.name}
+                                <X size={12} weight="bold" className="ml-1" />
+                            </span>
+                        ))}
 
 
                     </div>

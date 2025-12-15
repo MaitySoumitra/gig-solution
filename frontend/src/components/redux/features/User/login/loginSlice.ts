@@ -1,23 +1,16 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import axiosClient from "../../../../api/axiosClient";
-
-// --- INTERFACES ---
-
-interface UserProfile {
-     id: string;
-    name: string;
-    role: string;
-}
+import type { User } from "../../allType";
 
 interface LoginSuccessPayload {
-    user: UserProfile;
+    user: User;
     redirectTo: string;
     message: string;
 }
 
 interface AuthState {
-    user: UserProfile | null;
+    user: User | null;
     isAuthenticated: boolean;
     loading: "idle" | "pending" | "successed" | "failed";
     error: string | null;
@@ -34,12 +27,10 @@ const initialState: AuthState = {
     redirectTo: null,
 };
 
-// --- ASYNC THUNK ---
-
 export const loginUsers = createAsyncThunk<
-    LoginSuccessPayload, // ✅ Return type
-    { email: string; password: string }, // ✅ Argument type
-    { rejectValue: string } // ✅ Reject type
+    LoginSuccessPayload,
+    { email: string; password: string }, 
+    { rejectValue: string }
 >(
     "auth/loginUsers",
     async ({ email, password }, { rejectWithValue }) => {
@@ -47,7 +38,7 @@ export const loginUsers = createAsyncThunk<
             const res = await axiosClient.post(
                 "/api/users/login",
                 { email, password },
-                { withCredentials: true } // HttpOnly cookie
+                { withCredentials: true } 
             );
             return res.data as LoginSuccessPayload;
         } catch (err: any) {
@@ -57,14 +48,11 @@ export const loginUsers = createAsyncThunk<
 );
 
 
-
-// --- SLICE ---
-
 const loginSlice = createSlice({
     name: "user",
     initialState,
     reducers: {
-        setAuthState: (state, action: PayloadAction<UserProfile | null>) => {
+        setAuthState: (state, action: PayloadAction<User | null>) => {
             state.user = action.payload;
             state.isAuthenticated = !!action.payload;
             state.loading = 'idle';

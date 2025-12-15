@@ -3,18 +3,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import axiosClient from "../../../../api/axiosClient";
-
-interface UserProfile {
-  _id?: string;
-  name: string;
-  email: string;
-  role: "admin" | "tutor" | "student" | "institute"; // Added 'institute' for full role coverage
-  phone?: string;
-  // REMOVED: cookieId?: string; 
-}
+import type { User } from "../../allType";
 
 interface RegisterState {
-  user: UserProfile | null;
+  user: User | null;
   loading: 'idle' | 'pending' | 'succeeded' | 'failed';
   error: string | null;
   successMessage: string | null;
@@ -31,7 +23,7 @@ const initialState: RegisterState = {
 
 // Async thunk for registration (No changes needed here as it handles API call)
 export const registerUser = createAsyncThunk<
-  UserProfile, // return type
+  User, // return type
   { name: string; email: string; password: string; role: string; phone?: string }, // argument type
   { rejectValue: string }
 >(
@@ -65,7 +57,7 @@ const registerSlice = createSlice({
         state.error = null;
         state.successMessage = null;
       })
-      .addCase(registerUser.fulfilled, (state, action: PayloadAction<UserProfile>) => {
+      .addCase(registerUser.fulfilled, (state, action: PayloadAction<User>) => {
         state.loading = 'succeeded';
         state.user = action.payload;
         // The success message is the trigger for navigation
