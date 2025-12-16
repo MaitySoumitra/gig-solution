@@ -46,28 +46,40 @@ const createTask = async (req, res) => {
         res.status(500).json({ message: 'Server Error: Failed to create task' });
     }
 }
-const getTaskById = async (req, res) => {
-    try {
-        const task = await Task.findById(req.params.id)
-            .populate('assignedTo', 'name email role')
-            .populate('attachments.uploadBy', 'name.email')
-            .populate('comments.user', 'name profilePicture')
-            .populate('activityLog.user', 'name');
-        if (!task) {
-            return res.status(404).json({ message: 'task not found' })
-        }
-        const board = await Board.findById(task.board).select('members');
-        const isMember=board.members.some(member=>member.toString()===req.user._id.toString())
-        if(!isMember){
-            return res.status(403).json({message: 'Access denied. Not a board member'})
-        }
-        res.status(200).json(task)
+// controller/taskController.js
+const getTasksForColumn = async (req, res) => {
+  try {
+    const { boardId, columnId } = req.params;
+
+    // Check if boardId and columnId are provided
+    if (!boardId || !columnId) {
+      return res.status(400).json({ message: 'boardId and columnId are required' });
     }
-    catch(error){
-        console.error(`Error fetching  task ${req.paramas.id}`, error)
-        res.status(500).json({message: "Server error: failed to retrive task"})
+
+    const board = await Board.findById(boardId).select('members');
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
     }
-}
+
+    // Ensure user is a member of the board
+    if (!board.members.some(member => member.toString() === req.user._id.toString())) {
+      return res.status(403).json({ message: 'Access denied. Not a board member' });
+    }
+
+    const tasks = await Task.find({ board: boardId, column: columnId })
+      .populate('assignedTo', 'name email role')
+      .populate('attachments.uploadedBy', 'name email')
+      .populate('comments.user', 'name profilePicture')
+      .populate('activityLog.user', 'name');
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error(`Error fetching tasks for board ${req.params.boardId} and column ${req.params.columnId}`, error);
+    res.status(500).json({ message: 'Server error fetching tasks' });
+  }
+};
+
+
 const moveTask = async(req, res)=>{
     const {newColumnId, newPostion}=req.body;
     const taskId=req.params.id;
@@ -110,4 +122,4 @@ const moveTask = async(req, res)=>{
     }
 }
 
-module.exports={createTask, getTaskById, moveTask}
+module.exports={createTask, getTasksForColumn, moveTask}

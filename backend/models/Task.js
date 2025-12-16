@@ -8,7 +8,7 @@ const commentSchema = new Schema({
     },
     text:{
         type:String,
-        required: true
+        
     }
 }, {timestamps: true});
 
@@ -19,7 +19,7 @@ const activitySchema = new Schema({
     },
     action:{
         type: String,
-        required: true
+        
     }
 }, {timestamps:true});
 

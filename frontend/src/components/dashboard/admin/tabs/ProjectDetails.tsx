@@ -6,8 +6,8 @@ import type { Task } from '../../../types/allType';
 
 import { addColumn, fetchColumn } from '../../../redux/features/Column/columnSlice';
 import { DashBoardHeader } from './DashBoardHeader';
-import { DasBoardBody } from './DashBoardBody';
-import { addTask } from '../../../redux/features/Task/taskSlice';
+import { DashBoardBody } from './DashBoardBody';
+import { addTask, fetchTasksForColumn } from '../../../redux/features/Task/taskSlice';
 
 export const ProjectDetails = () => {
 
@@ -16,17 +16,18 @@ export const ProjectDetails = () => {
 
     const column = useAppSelector(state => state.column.columns)
 
+    const task=useAppSelector(state=>state.task.task)
+
     const handleAddMember = (boardId: string, memberId: string) => {
         dispatch(addMember({ boardId, memberId }))
-
     }
     const handaleAddColumn = (boardId: string, name: string) => {
         dispatch(addColumn({ boardId, name }))
     }
     const handaleAddTask=(boardId:string, columnId:string, taskData:Partial<Task>)=>{
-        dispatch(addTask({boardId,columnId, taskData}))
-
+        dispatch(addTask({boardId, columnId, taskData}))
     }
+    
 
     useEffect(() => {
         dispatch(fetchBoard())
@@ -41,6 +42,18 @@ export const ProjectDetails = () => {
             })
         }
     }, [boards, dispatch])
+  useEffect(() => {
+  boards.forEach(board => {
+    const boardColumns = column[board._id] || [];
+    boardColumns.forEach(col => {
+      // Only dispatch if both IDs exist
+      if (board._id && col._id) {
+        dispatch(fetchTasksForColumn({ boardId: board._id, columnId: col._id }));
+      }
+    });
+  });
+}, [boards, column, dispatch]);
+
     return (
         <div>
             {
@@ -54,10 +67,11 @@ export const ProjectDetails = () => {
                                 name={b.name}
                                 onAddMember={handleAddMember}
                             />
-                            <DasBoardBody 
+                            <DashBoardBody 
                             column={column[b._id] || []} id={b._id} 
                             onAddColumn={handaleAddColumn} 
                             onAddTask={handaleAddTask}
+                            task={task}
                             />
 
                         </div>

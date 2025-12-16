@@ -6,7 +6,7 @@ import { addTask } from "./taskSlice";
 interface AddTaskForm {
     title: string;
     description: string;
-    priority: "Low" | "medium" | "high" | "critical";
+    priority: "Low" | "Medium" | "High" | "Critical";
     dueDate: Date;
 }
 
@@ -81,9 +81,9 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
             >
                 <option value="">Select priority</option>
                 <option value="Low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
             </select>
 
             {/* Due Date */}

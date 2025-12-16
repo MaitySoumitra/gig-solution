@@ -40,7 +40,7 @@ mongoose.connect(process.env.MONGO_URL, {
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/boards', require('./routes/boardRoute'))
 app.use('/api/column', require('./routes/columnRoute'))
-app.use('/api/tasks', require('./routes/taskRoutes'))
+
 
 
 // Default route

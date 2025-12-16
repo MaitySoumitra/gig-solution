@@ -28,17 +28,18 @@ type Activity = {
     user: User[],
     action: string
 }
+type Subtask = { title: string, isCompleted: boolean };
 export type Task = {
     _id:string,
     title: string,
     description: string,
-    priority: "Low" | "medium" | "high" | "critical",
+    priority: "Low" | "Medium" | "High" | "Critical",
     dueDate: Date,
-    startDayte: Date,
+    startDate: Date,
     assignedTo: User[],
     column: string,
     board: Board[],
-    subtasks: string[],
+    subtasks: Subtask[],
     attachment: [],
     comments: Comment[],
     activityLog: Activity[],
