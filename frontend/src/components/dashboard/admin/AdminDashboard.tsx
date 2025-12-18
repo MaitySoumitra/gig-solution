@@ -16,7 +16,7 @@ export const AdminDashboard = () => {
     const boardName=board?.map(b=>slugify(b.name))
     const { boardSlug } = useParams();
   return (
-    <div className='flex min-h-screen max-w-7xl mx-auto'>
+    <div className='flex min-h-screen max-w-8xl mx-auto px-4 py-5'>
         <Sidebar/>
         <div className="flex-1 p-6">
         <Routes>

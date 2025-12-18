@@ -2,6 +2,7 @@
 
 import { useCurrentUser } from './components/api/useCurrentUser'
 import { AdminDashboard } from './components/dashboard/admin/AdminDashboard';
+import { DragDrop } from './components/DragDrop';
 import { IndexPage } from './components/pages/IndexPage'
 // IMPORTANT: Remove { Routes, Route } imports from here!
 // import { Routes, Route } from 'react-router-dom' // <-- DO NOT import/use Routes here
@@ -20,7 +21,7 @@ function App() {
         );
     }
 
-    return <IndexPage/>
+    return <DragDrop/>
 }
 
 export default App

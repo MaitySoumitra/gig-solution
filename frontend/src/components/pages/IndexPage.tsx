@@ -15,9 +15,7 @@ export const IndexPage = () => {
                 <Route path='/' element={<Auth />} />
                 <Route path="/:role/dashboard/*" element={<AdminDashboard />} />
             </Routes>
-            <ProtectedRoute>
-                <AdminDashboard />
-            </ProtectedRoute>
+           
         </>
     );
 };

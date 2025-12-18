@@ -33,7 +33,7 @@ export const DashBoardHeader = ({ id, members, name, onAddMember }: DashBoardHea
 
     return (
         <div>
-            <div className='flex px-2 py-3 bg-gray-200 justify-between'>
+            <div className='flex px-2 py-3 bg-gray-100 justify-between rounded-lg'>
                 <h2 className='font-bold text-[25px]'>{name}</h2>
                 <div className='flex space-x-3 justify-center items-center'>
                     <div className="flex gap-0">

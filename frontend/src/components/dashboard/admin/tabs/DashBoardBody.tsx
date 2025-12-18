@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Task } from "../../../types/allType";
 import TaskView from "../../../redux/features/Task/taskView";
-import { X } from "@phosphor-icons/react";
+import { Plus, X } from "@phosphor-icons/react";
 import { TaskDetails } from "./TaskDetails";
 
 interface Column {
@@ -21,57 +21,56 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
   const [showColumnInput, setShowColumnInput] = useState(false)
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask]=useState<Task | null>(null)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
-  const taskStatus=(task:Task)=>{
-    return column.find(c=> c._id===task.column)?.name
+  const taskStatus = (task: Task) => {
+    return column.find(c => c._id === task.column)?.name
   }
 
   return (
     <div>
       <div className='flex gap-2 mt-2'>
-        <div className='flex gap-2 h-100 '>
+        <div className='flex gap-2 relative h-full '>
           {column.map((c: any) => (
-            <div key={c._id}>
-              <div className='relative text-center font-bold px-2 py-2 border-b bg-gray-100 w-40'>{c.name}</div>
+            <div key={c._id} className="bg-gray-100 rounded-lg p-2">
+              <div className=' font-bold px-2 py-2 border-b border-gray-300  w-[250px]'>{c.name}</div>
 
               {
                 task.filter(t => t.column.toString() === c._id)
                   .map(t => (
-                    <div 
-                    key={t._id} 
-                    className="p-2 shadow-lg rounded-sm rounded mt-1 cursor-pointer"
-                    onClick={()=>setSelectedTask(t)}
-                    
+                    <div
+                      key={t._id}
+                      className="p-2 shadow-sm border border-gray-100 rounded-sm rounded mt-2 cursor-pointer bg-white"
+                      onClick={() => setSelectedTask(t)}
                     >
                       <p>{t.title}</p>
-                      <p>📅{new Date(t.dueDate).toLocaleDateString('en-US', {month:'short', day:'numeric'})}</p>
+                      <p>📅{new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                       <p>🚩{t.priority}</p>
                     </div>
                   ))
               }
-              {selectedTask &&(
+              {selectedTask && (
                 <div className="absolute w-40 h-60 shadow-lg bg-gray-50">
-                  <TaskDetails 
-                  status={taskStatus(selectedTask)}
-                  task={selectedTask} 
-                  onClose={()=>setSelectedTask(null)} 
-                  onSave={(upDatedTask)=>{
-                    console.log("Task Updated:", upDatedTask)
-                  }}
+                  <TaskDetails
+                    status={taskStatus(selectedTask)}
+                    task={selectedTask}
+                    onClose={() => setSelectedTask(null)}
+                    onSave={(upDatedTask) => {
+                      console.log("Task Updated:", upDatedTask)
+                    }}
                   />
-                   </div>
+                </div>
               )}
 
               <button
                 onClick={() => setActiveColumnId(c._id)}
-                className=""
+                className="apperance-none flex justify-center gap-2 items-center mt-2"
               >
-                ➕ create
+               <Plus/> create task
               </button>
 
               {activeColumnId === c._id && (
-                <div className="mt-2 absolute shadow-lg rounded-lg">
+                <div className="relative mt-2 shadow-lg rounded-lg">
                   <TaskView boardId={id} columnId={c._id} />
 
                   <button
@@ -81,6 +80,7 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
                     <X />
                   </button>
                 </div>
+                
               )}
             </div>
           ))}
@@ -93,9 +93,9 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
                 setShowColumnInput(true);
 
               }}
-              className='px-3 py-2 bg-gray-50 text-white rounded shadow'
+              className='apperance-none px-3 py-2 bg-gray-50 text-gray-600 rounded shadow'
             >
-              ➕
+             <Plus/>
             </button>
           ) : (
             <div className="flex space-x-2 items-center">
