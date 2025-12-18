@@ -26,13 +26,34 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
   const taskStatus = (task: Task) => {
     return column.find(c => c._id === task.column)?.name
   }
+  const handaleDrop = (e: React.DragEvent<HTMLDivElement>, toColumnId: string) => {
+    e.preventDefault();
+    const data = JSON.parse(
+      e.dataTransfer.getData("application/json")
+    ) as {
+      taskId: string,
+      fromColumnId: string
+    }
+    if (data.fromColumnId === toColumnId) return
+
+    onAddTask(id, toColumnId, {
+      _id: data.taskId,
+      column: toColumnId
+    } as Partial<Task>)
+  }
+
 
   return (
     <div>
       <div className='flex gap-2 mt-2'>
         <div className='flex gap-2 relative h-full '>
           {column.map((c: any) => (
-            <div key={c._id} className="bg-gray-100 rounded-lg p-2">
+            <div key={c._id}
+              className="bg-gray-100 rounded-lg p-2"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handaleDrop(e, c._id)}
+
+            >
               <div className=' font-bold px-2 py-2 border-b border-gray-300  w-[250px]'>{c.name}</div>
 
               {
@@ -42,6 +63,8 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
                       key={t._id}
                       className="p-2 shadow-sm border border-gray-100 rounded-sm rounded mt-2 cursor-pointer bg-white"
                       onClick={() => setSelectedTask(t)}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData("application/json", JSON.stringify({ taskId: t._id, fromColumnId: c._id }))}
                     >
                       <p>{t.title}</p>
                       <p>📅{new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
@@ -66,7 +89,7 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
                 onClick={() => setActiveColumnId(c._id)}
                 className="apperance-none flex justify-center gap-2 items-center mt-2"
               >
-               <Plus/> create task
+                <Plus /> create task
               </button>
 
               {activeColumnId === c._id && (
@@ -80,7 +103,7 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
                     <X />
                   </button>
                 </div>
-                
+
               )}
             </div>
           ))}
@@ -95,7 +118,7 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
               }}
               className='apperance-none px-3 py-2 bg-gray-50 text-gray-600 rounded shadow'
             >
-             <Plus/>
+              <Plus />
             </button>
           ) : (
             <div className="flex space-x-2 items-center">
