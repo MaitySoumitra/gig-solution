@@ -3,6 +3,8 @@ import type { Task } from "../../../types/allType";
 import TaskView from "../../../redux/features/Task/taskView";
 import { Plus, X } from "@phosphor-icons/react";
 import { TaskDetails } from "./TaskDetails";
+import { moveTask } from "../../../redux/features/Task/taskSlice";
+import { useAppDispatch } from "../../../redux/app/hook";
 
 interface Column {
   _id: string,
@@ -14,6 +16,7 @@ interface DashBoardBodyProps {
   column: Column[],
   onAddColumn: (boardId: string, name: string) => void,
   onAddTask: (boardId: string, columnId: string, taskData: Partial<Task>) => void
+
   task: Task[]
 }
 
@@ -22,25 +25,17 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-
+  const dispatch = useAppDispatch()
   const taskStatus = (task: Task) => {
     return column.find(c => c._id === task.column)?.name
   }
-  const handaleDrop = (e: React.DragEvent<HTMLDivElement>, toColumnId: string) => {
-    e.preventDefault();
-    const data = JSON.parse(
-      e.dataTransfer.getData("application/json")
-    ) as {
-      taskId: string,
-      fromColumnId: string
-    }
-    if (data.fromColumnId === toColumnId) return
-
-    onAddTask(id, toColumnId, {
-      _id: data.taskId,
-      column: toColumnId
-    } as Partial<Task>)
-  }
+  const handleTaskMove = (taskId: string, toColumnId: string, toPosition: number) => {
+    dispatch(moveTask({
+      taskId,
+      newColumnId: toColumnId,
+      newPosition: toPosition
+    }));
+  };
 
 
   return (
@@ -51,20 +46,53 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
             <div key={c._id}
               className="bg-gray-100 rounded-lg p-2"
               onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => handaleDrop(e, c._id)}
+              onDrop={(e) => {
+                e.preventDefault();
+                const data = JSON.parse(e.dataTransfer.getData("application/json"));
+
+                // 1. Find all tasks belonging to THIS column (c._id)
+                const tasksInThisColumn = task.filter(t => t.column.toString() === c._id);
+
+                // 2. The "Bottom" position is the total count of tasks currently there
+                const bottomPosition = tasksInThisColumn.length;
+
+                handleTaskMove(data.taskId, c._id, bottomPosition);
+              }}
 
             >
               <div className=' font-bold px-2 py-2 border-b border-gray-300  w-[250px]'>{c.name}</div>
 
               {
                 task.filter(t => t.column.toString() === c._id)
-                  .map(t => (
+                  .sort((a, b) => (a.position || 0) - (b.position || 0))
+                  .map((t, index) => (
                     <div
                       key={t._id}
-                      className="p-2 shadow-sm border border-gray-100 rounded-sm rounded mt-2 cursor-pointer bg-white"
-                      onClick={() => setSelectedTask(t)}
                       draggable
-                      onDragStart={(e) => e.dataTransfer.setData("application/json", JSON.stringify({ taskId: t._id, fromColumnId: c._id }))}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("application/json", JSON.stringify({
+                          taskId: t._id,
+                          fromColumnId: c._id,
+                          fromIndex: index // ADD THIS
+                        }));
+                      }}
+                      // Handle dropping directly on another task (reordering)
+                     onDrop={(e) => {
+  e.stopPropagation();
+  const data = JSON.parse(e.dataTransfer.getData("application/json"));
+
+  let finalPosition = index;
+
+  // FIX: Adjust index when dragging DOWN within same column
+  if (data.fromColumnId === c._id && data.fromIndex < index) {
+    finalPosition = index - 1;
+  }
+
+  handleTaskMove(data.taskId, c._id, finalPosition);
+}}
+
+                      className="p-2 shadow-sm border rounded mt-2 cursor-pointer bg-white"
+                      onClick={() => setSelectedTask(t)}
                     >
                       <p>{t.title}</p>
                       <p>📅{new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
@@ -140,6 +168,6 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
         </div>
       </div>
 
-    </div>
+    </div >
   )
 }

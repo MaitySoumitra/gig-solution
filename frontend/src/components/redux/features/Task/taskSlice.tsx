@@ -41,10 +41,10 @@ export const addTask = createAsyncThunk<Task, { boardId: string, columnId: strin
     }
 })
 
-export const moveTask = createAsyncThunk<{ taskId: string, newColumnId: string }, { taskId: string, newColumnId: string }, { rejectValue: string }>("task/moveTask", async ({ taskId, newColumnId }, { rejectWithValue }) => {
+export const moveTask = createAsyncThunk<{ taskId: string, newColumnId: string, newPosition: number }, { taskId: string, newColumnId: string, newPosition: number }, { rejectValue: string }>("task/moveTask", async ({ taskId, newColumnId, newPosition }, { rejectWithValue }) => {
     try {
-        const res = await axiosClient.patch(`/api/tasks/${taskId}/move`, { withCredentials: true })
-        return res.data
+        await axiosClient.patch(`/api/tasks/${taskId}/move`, { newColumnId, newPosition }, { withCredentials: true })
+        return { taskId, newColumnId, newPosition }
     }
     catch (err: any) {
         return rejectWithValue(err.response?.data?.message || err.message)
@@ -89,15 +89,38 @@ const taskSlice = createSlice({
                 state.loading = "failed",
                     state.error = action.payload as string
             })
-            .addCase(moveTask.pending, (state) => {
-                state.loading = "pending",
-                    state.error = null
+            // taskSlice.ts
+
+            .addCase(moveTask.pending, (state, action) => {
+                const { taskId, newColumnId, newPosition } = action.meta.arg;
+
+                // 1. Find the task
+                const taskToMove = state.task.find(t => t._id === taskId);
+                if (taskToMove) {
+                    // 2. Update its column
+                    taskToMove.column = newColumnId;
+                    // 3. Update its position
+                    taskToMove.position = newPosition;
+
+                    // 4. Update positions of other tasks in the same column
+                    state.task.forEach(t => {
+                        if (t.column === newColumnId && t._id !== taskId) {
+                            if (t.position >= newPosition) {
+                                t.position += 1; // Shift others down
+                            }
+                             
+                        }
+                    });
+                }
             })
-            .addCase(moveTask.fulfilled, (state, action) => {
+            .addCase(moveTask.fulfilled, (state) => {
                 state.loading = "fulfilled";
-                const { taskId, newColumnId } = action.payload;
-                const tasks = state.task.find((t) => t._id === taskId)
-                if (tasks) tasks.column = newColumnId
+                // No need to do anything here if handled in pending
+            })
+            .addCase(moveTask.rejected, (state, action) => {
+                state.loading = "failed";
+                state.error = action.payload as string;
+                // Note: If it fails, you might need to "Rollback" the column ID here
             })
     }
 })

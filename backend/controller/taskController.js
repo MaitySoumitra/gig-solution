@@ -78,48 +78,55 @@ const getTasksForColumn = async (req, res) => {
     res.status(500).json({ message: 'Server error fetching tasks' });
   }
 };
+const moveTask = async (req, res) => {
+  const { newColumnId, newPosition } = req.body;
+  const taskId = req.params.taskId;
 
+  try {
+    // 1. Find the task and update its column/position immediately
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
 
-const moveTask = async(req, res)=>{
-    const {newColumnId, newPostion}=req.body;
-    const taskId=req.params.id;
+    const oldColumnId = task.column;
+    
+    // Update the specific task first
+    task.column = newColumnId;
+    task.position = newPosition;
+    await task.save();
 
-    if(!newColumnId){
-        return res.status(400).json({message: "new column id is required for movid task"})
+    // 2. Fetch all other tasks in that NEW column to re-index them
+    const allTasksInCol = await Task.find({ 
+      column: newColumnId, 
+      _id: { $ne: taskId } 
+    }).sort('position');
+
+    // Insert the moved task into the array at the target position
+    allTasksInCol.splice(newPosition, 0, task);
+
+    // 3. Prepare bulk update to ensure EVERY task has a sequential position (0, 1, 2...)
+    const updateOps = allTasksInCol.map((t, i) => ({
+      updateOne: {
+        filter: { _id: t._id },
+        update: { $set: { position: i } },
+      }
+    }));
+
+    await Task.bulkWrite(updateOps);
+
+    // 4. OPTIONAL: If moved from a different column, re-index the OLD column to close the gap
+    if (String(oldColumnId) !== String(newColumnId)) {
+       const oldColTasks = await Task.find({ column: oldColumnId }).sort('position');
+       const oldOps = oldColTasks.map((t, i) => ({
+         updateOne: { filter: { _id: t._id }, update: { $set: { position: i } } }
+       }));
+       if (oldOps.length > 0) await Task.bulkWrite(oldOps);
     }
-    try{
-        const task= await Task.findById(taskId);
-        if(!task){
-            return res.status(404).json({message: "Task is not found"})
-        }
-        const oldColumnId=task.column;
-        const board=await Board.findById(task.board).select('members');
-        const isMember = board.members.some(member=>member.toString()===req.user._id.toString())
 
-        if(!isMember){
-            return res.status(403).json({message: 'Access Denied . Not a board member'})
-        }
-        await Column.findByIdAndUpdate(
-            oldColumnId,
-            {$pull:{task: taskId}}
-        )
-        await Column.findByIdAndUpdate(
-            newColumnId,
-            {$push: {task:taskId}}
-        )
-        task.column=newColumnId;
-        task.activityLog.push({
-            user:req.user._id, 
-            action:`Move task from column ${oldColumnId} to ${newColumnId}`
-        })
-        await task.save()
-        res.status(200).json({message: 'Task moved successfully!', taskId})
-       
-    }
-    catch(error){
-        console.error(`Error moving task ${taskId}:`, error)
-        res.status(500).json({message:"Server Error: failed to move task."})
-    }
-}
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Database update failed" });
+  }
+};
 
 module.exports={createTask, getTasksForColumn, moveTask}

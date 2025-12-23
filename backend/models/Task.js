@@ -28,6 +28,7 @@ const TaskSchema = new Schema({
         type: String,
         required: true
     },
+    position: {type:Number, default:0},
     description: { type: String},
     priority:{
         type: String,

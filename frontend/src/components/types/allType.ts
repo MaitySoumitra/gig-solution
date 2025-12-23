@@ -44,5 +44,5 @@ export type Task = {
     comments: Comment[],
     activityLog: Activity[],
     labels: string
-
+    position: number
 }
