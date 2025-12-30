@@ -28,6 +28,10 @@ type Activity = {
     user: User[],
     action: string
 }
+export type Label={
+    name: string,
+    color: string
+}
 type Subtask = { title: string, isCompleted: boolean };
 export type Task = {
     _id:string,
@@ -43,6 +47,6 @@ export type Task = {
     attachment: [],
     comments: Comment[],
     activityLog: Activity[],
-    labels: string
+    labels: Label[],
     position: number
 }

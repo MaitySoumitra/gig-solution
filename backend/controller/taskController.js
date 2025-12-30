@@ -149,7 +149,7 @@ const updateTask= async(req, res)=>{
       {
           $set: updates
       },
-      {new: true}
+      {new: true, runValidators: true}
      ).populate('assignedTo', 'name email')
      res.status(200).json(updatedTask)
   }
