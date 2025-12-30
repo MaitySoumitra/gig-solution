@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Task } from "../../../types/allType";
 import TaskView from "../../../redux/features/Task/taskView";
-import { Plus, X } from "@phosphor-icons/react";
+import { CalendarBlank, Flag, Plus, Tag, X } from "@phosphor-icons/react";
 import { TaskDetails } from "./TaskDetails";
 import { moveTask, updateTask } from "../../../redux/features/Task/taskSlice";
 import { useAppDispatch } from "../../../redux/app/hook";
@@ -70,57 +70,95 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
               }}
 
             >
-              <div className='flex  items-center font-bold text-sm px-2 py-2 border-b border-gray-300  w-[250px]'>
-                <p className=" p-1 bg-green-200 rounded-md shadow-mod">{c.name}</p>
-                <p className="ml-4 text-green-400">{task.filter(t=>t.column===c._id).length}</p>
+              <div className="flex items-center justify-between font-bold text-xs  w-[250px] ">
+                <div className="flex items-center gap-2">
+                  {/* Status Badge */}
+                  <div className="flex items-center bg-[#0052CC] text-white px-2 py-1 rounded-[3px] uppercase tracking-wide text-[10px]">
+                    <span className="mr-1.5 inline-block w-3 h-3 border-2 border-white rounded-full opacity-80"></span>
+                    {c.name}
+                  </div>
+
+                  {/* Count */}
+                  <span className="ml-1 text-gray-500 font-medium text-sm">
+                    {task.filter(t => t.column === c._id).length}
+                  </span>
+                </div>
+
+                {/* Options Icon (The three dots) */}
+                <div className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none">
+                  ···
+                </div>
               </div>
-              {
-                task.filter(t => t.column.toString() === c._id)
-                  .sort((a, b) => (a.position || 0) - (b.position || 0))
-                  .map((t, index) => (
-                    <div
-                      key={t._id}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("application/json", JSON.stringify({
+              {task
+                .filter((t) => t.column.toString() === c._id)
+                .sort((a, b) => (a.position || 0) - (b.position || 0))
+                .map((t, index) => (
+                  <div
+                    key={t._id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(
+                        "application/json",
+                        JSON.stringify({
                           taskId: t._id,
                           fromColumnId: c._id,
-                          fromIndex: index // ADD THIS
-                        }));
-                      }}
-                      // Handle dropping directly on another task (reordering)
-                      onDrop={(e) => {
-                        e.stopPropagation();
-                        const data = JSON.parse(e.dataTransfer.getData("application/json"));
+                          fromIndex: index,
+                        })
+                      );
+                    }}
+                    onDrop={(e) => {
+                      e.stopPropagation();
+                      const data = JSON.parse(e.dataTransfer.getData("application/json"));
+                      let finalPosition = index;
+                      if (data.fromColumnId === c._id && data.fromIndex < index) {
+                        finalPosition = index - 1;
+                      }
+                      handleTaskMove(data.taskId, c._id, finalPosition);
+                    }}
+                    className="p-3 shadow-lg  rounded-lg mt-2 cursor-pointer bg-white hover:border-blue-400 transition-colors"
+                    onClick={() => setSelectedTask(t)}
+                  >
+                    {/* Task Title */}
+                    <p className="text-gray-800 text-sm font-medium mb-3 leading-snug">
+                      {t.title}
+                    </p>
 
-                        let finalPosition = index;
-
-                        // FIX: Adjust index when dragging DOWN within same column
-                        if (data.fromColumnId === c._id && data.fromIndex < index) {
-                          finalPosition = index - 1;
-                        }
-
-                        handleTaskMove(data.taskId, c._id, finalPosition);
-                      }}
-
-                      className="p-2 shadow-sm border rounded mt-2 cursor-pointer bg-white"
-                      onClick={() => setSelectedTask(t)}
-                    >
-                      <p>{t.title}</p>
-                      <div className="flex justify-between">
-                        <div className="flex-wrap">
-                          <p>📅{new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                          <p>🚩{t.priority}</p>
+                    {/* Footer Info */}
+                    <div className="flex items-center gap-2">
+                      {/* Avatar */}
+                      {t.assignedTo?.[0]?.name && (
+                        <div className="w-6 h-6 text-[10px] text-white flex shrink-0 justify-center items-center font-bold rounded-full bg-[#B18CFE]">
+                          {t.assignedTo[0].name.substring(0, 2).toUpperCase()}
                         </div>
-                        {t.assignedTo.map(a => (
-                        
-                          
-                            a.name ?(<div className="w-8 h-8 text-white flex justify-center items-center text-lg font-bold rounded-full bg-[#57136E]"> {a.name[0].toUpperCase()} </div>) : ""
-                          ))}
+                      )}
+
+                      {/* Metadata Badges */}
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        {/* Due Date */}
+                        <div className="flex items-center gap-1 px-2 py-0.5 border rounded-md text-[#2D7A7B] bg-gray-50/50 text-[11px] font-medium">
+                          <CalendarBlank size={14} weight="bold" />
+                          <span>
+                            {new Date(t.dueDate).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                        </div>
+
+                        {/* Priority */}
+                        <div className="flex items-center gap-1 px-2 py-0.5 border rounded-md text-gray-600 bg-gray-50/50 text-[11px] font-medium">
+                          <Flag size={14} weight="fill" className="text-yellow-500" />
+                          <span>{t.priority}</span>
+                        </div>
+
+                        {/* Tag Icon */}
+                        <div className="flex items-center gap-1 px-2 py-0.5 border rounded-md text-gray-600 bg-gray-50/50 text-[11px] font-medium">
+                          <Tag size={14} /> <span>{t.labels.map(l => l.name)}</span>
+                        </div>
                       </div>
                     </div>
-                  ))
-              }
+                  </div>
+                ))}
               {selectedTask && (
                 <div className="absolute w-40 h-60 shadow-lg bg-gray-50">
                   <TaskDetails
