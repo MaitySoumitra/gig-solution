@@ -1,30 +1,27 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type { Task } from "../../../types/allType";
 import TaskView from "../../../redux/features/Task/taskView";
 import { CalendarBlank, Flag, Plus, Tag, X } from "@phosphor-icons/react";
 import { TaskDetails } from "./TaskDetails";
 import { moveTask, updateTask } from "../../../redux/features/Task/taskSlice";
-import { useAppDispatch } from "../../../redux/app/hook";
+import { useAppDispatch, useAppSelector } from "../../../redux/app/hook";
+import { BoardContext } from "../../../context/board/BoardContext";
 
-interface Column {
-  _id: string,
-  name: string,
-  task?: string[]
-}
+
 interface DashBoardBodyProps {
-  id: string,
-  column: Column[],
+ 
   onAddColumn: (boardId: string, name: string) => void,
   onAddTask: (boardId: string, columnId: string, taskData: Partial<Task>) => void
 
   task: Task[]
 }
 
-export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: DashBoardBodyProps) => {
+export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyProps) => {
   const [showColumnInput, setShowColumnInput] = useState(false)
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const columns = useAppSelector(state => state.column.columns)
   const dispatch = useAppDispatch()
   const taskStatus = (task: Task) => {
     return column.find(c => c._id === task.column)?.name
@@ -46,6 +43,9 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
     }
 
   }
+  const board =useContext(BoardContext)
+  if(!board) return null
+  const column=columns[board._id] ||[]
 
 
   return (
@@ -178,7 +178,7 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
 
               {activeColumnId === c._id && (
                 <div className="relative mt-2 shadow-lg rounded-lg">
-                  <TaskView boardId={id} columnId={c._id} />
+                  <TaskView boardId={board._id} columnId={c._id} />
 
                   <button
                     onClick={() => setActiveColumnId(null)}
@@ -213,7 +213,7 @@ export const DashBoardBody = ({ column, id, onAddColumn, onAddTask, task }: Dash
                 className="px-2 py-1 border rounded"
               />
               <button
-                onClick={() => onAddColumn(id, columnName)}
+                onClick={() => onAddColumn(board._id, columnName)}
                 className="px-3 py-1 bg-green-500 text-white rounded"
               >
                 Save
