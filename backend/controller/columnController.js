@@ -45,6 +45,30 @@ const fetchColumn= async(req, res)=>{
         res.status(500).json({message: "server error cant fetch columns "})
     }
 }
+const deleteColumn= async(req, res)=>{
+    const {columnId}=req.params
+    try{
+        const column=await Column.findById(columnId);
+        if(!column){
+            return res.status(404).json({message: "Column Not found"})
+        }
+        const board= await Board.findById(column.board).select('members')
+        const isMember=board.members.some(member=> member._id.toString()===req.user._id.toString())
+        if(!isMember){
+            return res.status(403).json({message: "Access Denied Deleting Column"})
+        }
+        await Board.findByIdAndUpdate(column.board, {
+            $pull: {columns: columnId}
+        })
+        await Column.findByIdAndDelete(columnId)
+
+        return res.status(200).json({message: "Deleted Column Successfully"})
+    }
+    catch(error){
+        console.error(`error deleting column ${columnId}`, error)
+        res.status(500).json({message: "Internal server error"})
+    }
+}
 
 
-module.exports= {createColumn, fetchColumn}
+module.exports= {createColumn, fetchColumn, deleteColumn}

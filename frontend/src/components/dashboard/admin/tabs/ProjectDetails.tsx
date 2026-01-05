@@ -29,9 +29,7 @@ export const ProjectDetails = () => {
     const handaleAddColumn = (boardId: string, name: string) => {
         dispatch(addColumn({ boardId, name }))
     }
-    const handaleAddTask = (boardId: string, columnId: string, taskData: Partial<Task>) => {
-        dispatch(addTask({ boardId, columnId, taskData }))
-    }
+  
 
     useEffect(() => {
         if (board._id) {
@@ -57,7 +55,6 @@ export const ProjectDetails = () => {
                     />
                     <DashBoardBody
                         onAddColumn={handaleAddColumn}
-                        onAddTask={handaleAddTask}
                         task={task}
                     />
             </div>

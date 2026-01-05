@@ -103,9 +103,6 @@ export const TaskDetails = ({ task, onClose, onSave, status }: TaskDetailsProps)
     return (
         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
             <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col rounded-xl shadow-2xl">
-
-                {/* HEADER SECTION */}
-                {/* HEADER SECTION */}
                <TaskDetailsHeader onClose={onClose}/>
 
                 <div className="overflow-y-auto grid md:grid-cols-3 ">

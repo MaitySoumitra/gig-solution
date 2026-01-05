@@ -45,6 +45,15 @@ export const fetchColumn = createAsyncThunk<Column[], string>(
         }
     }
 );
+export const deleteColumn = createAsyncThunk("column/deleteColumn", async({boardId, columnId}:{boardId: string, columnId:string}, {rejectWithValue})=>{
+    try{
+       await axiosClient.delete(`/api/boards/${boardId}/column/${columnId}`, {withCredentials: true})
+        return {boardId, columnId}
+    }
+    catch(error: any){
+        return rejectWithValue(error.response?.data?.message || error.message)
+    }
+})
 
 const columnSlice = createSlice({
     name: "column",
@@ -82,8 +91,26 @@ const columnSlice = createSlice({
             .addCase(fetchColumn.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
-            });
+            })
+            .addCase(deleteColumn.pending, (state)=>{
+                state.loading=true
+            })
+            .addCase(deleteColumn.fulfilled, (state, action)=>{
+                const {boardId, columnId}=action.payload
+                if(state.columns[boardId]){
+                    state.columns[boardId]===state.columns[boardId].filter((col)=>
+                        col._id !== columnId
+                    )
+                }
+                state.loading= false
+                state.error=null
+            })
+            .addCase(deleteColumn.rejected, (state, action)=>{
+                state.loading=false
+                state.error=action.payload as string
+            })
     },
+
 });
 
 export default columnSlice.reducer;

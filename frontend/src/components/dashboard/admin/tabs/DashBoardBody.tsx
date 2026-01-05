@@ -11,12 +11,12 @@ import { BoardContext } from "../../../context/board/BoardContext";
 interface DashBoardBodyProps {
  
   onAddColumn: (boardId: string, name: string) => void,
-  onAddTask: (boardId: string, columnId: string, taskData: Partial<Task>) => void
+
 
   task: Task[]
 }
 
-export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyProps) => {
+export const DashBoardBody = ({   onAddColumn,  task }: DashBoardBodyProps) => {
   const [showColumnInput, setShowColumnInput] = useState(false)
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
   const columns = useAppSelector(state => state.column.columns)
   const dispatch = useAppDispatch()
   const taskStatus = (task: Task) => {
-    return column.find(c => c._id === task.column)?.name
+    return column.find(c => c._id === task.column)?.name || null
   }
   const handleTaskMove = (taskId: string, toColumnId: string, toPosition: number) => {
     dispatch(moveTask({
@@ -41,12 +41,10 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
         update: updatedFields
       }))
     }
-
   }
   const board =useContext(BoardContext)
   if(!board) return null
   const column=columns[board._id] ||[]
-
 
   return (
     <div>
@@ -59,32 +57,21 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
               onDrop={(e) => {
                 e.preventDefault();
                 const data = JSON.parse(e.dataTransfer.getData("application/json"));
-
-                // 1. Find all tasks belonging to THIS column (c._id)
                 const tasksInThisColumn = task.filter(t => t.column.toString() === c._id);
-
-                // 2. The "Bottom" position is the total count of tasks currently there
                 const bottomPosition = tasksInThisColumn.length;
-
                 handleTaskMove(data.taskId, c._id, bottomPosition);
               }}
-
             >
               <div className="flex items-center justify-between font-bold text-xs  w-[250px] ">
                 <div className="flex items-center gap-2">
-                  {/* Status Badge */}
                   <div className="flex items-center bg-[#0052CC] text-white px-2 py-1 rounded-[3px] uppercase tracking-wide text-[10px]">
                     <span className="mr-1.5 inline-block w-3 h-3 border-2 border-white rounded-full opacity-80"></span>
                     {c.name}
                   </div>
-
-                  {/* Count */}
                   <span className="ml-1 text-gray-500 font-medium text-sm">
                     {task.filter(t => t.column === c._id).length}
                   </span>
                 </div>
-
-                {/* Options Icon (The three dots) */}
                 <div className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none">
                   ···
                 </div>
@@ -118,22 +105,16 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
                     className="p-3 shadow-lg  rounded-lg mt-2 cursor-pointer bg-white hover:border-blue-400 transition-colors"
                     onClick={() => setSelectedTask(t)}
                   >
-                    {/* Task Title */}
                     <p className="text-gray-800 text-sm font-medium mb-3 leading-snug">
                       {t.title}
                     </p>
-                    {/* Footer Info */}
                     <div className="flex items-center gap-2">
-                      {/* Avatar */}
                       {t.assignedTo?.[0]?.name && (
                         <div className="w-6 h-6 text-[10px] text-white flex shrink-0 justify-center items-center font-bold rounded-full bg-[#B18CFE]">
                           {t.assignedTo[0].name.substring(0, 2).toUpperCase()}
                         </div>
                       )}
-
-                      {/* Metadata Badges */}
                       <div className="flex flex-wrap gap-1.5 items-center">
-                        {/* Due Date */}
                         <div className="flex items-center gap-1 px-2 py-0.5 border rounded-md text-[#2D7A7B] bg-gray-50/50 text-[11px] font-medium">
                           <CalendarBlank size={14} weight="bold" />
                           <span>
@@ -143,14 +124,10 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
                             })}
                           </span>
                         </div>
-
-                        {/* Priority */}
                         <div className="flex items-center gap-1 px-2 py-0.5 border rounded-md text-gray-600 bg-gray-50/50 text-[11px] font-medium">
                           <Flag size={14} weight="fill" className="text-yellow-500" />
                           <span>{t.priority}</span>
                         </div>
-
-                        {/* Tag Icon */}
                         <div className="flex items-center gap-1 px-2 py-0.5 border rounded-md text-gray-600 bg-gray-50/50 text-[11px] font-medium">
                           <Tag size={14} /> <span>{t.labels.map(l => l.name)}</span>
                         </div>
@@ -179,7 +156,6 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
               {activeColumnId === c._id && (
                 <div className="relative mt-2 shadow-lg rounded-lg">
                   <TaskView boardId={board._id} columnId={c._id} />
-
                   <button
                     onClick={() => setActiveColumnId(null)}
                     className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full items-center flex justify-center font-bold"
@@ -187,11 +163,9 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
                     <X />
                   </button>
                 </div>
-
               )}
             </div>
           ))}
-
         </div>
         <div>
           {!showColumnInput ? (
@@ -223,7 +197,6 @@ export const DashBoardBody = ({   onAddColumn, onAddTask, task }: DashBoardBodyP
           )}
         </div>
       </div>
-
     </div >
   )
 }
