@@ -14,10 +14,10 @@ export const TaskDetailsHeader = ({onClose}:{onClose:()=>void}) => {
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1 text-gray-500 text-sm">
                             <Folder size={18} />
-                            <span className="hover:underline cursor-pointer">Projects</span>
+                            <span className="hover:underline cursor-pointer">Project Board</span>
                             <span className="text-gray-300">/</span>
-                            <ListChecks size={18} weight="bold" className="text-gray-700" />
-                            <span className="font-semibold text-gray-800 uppercase tracking-tight">{board.name}</span>
+                            <ListChecks size={18} weight="bold" className="text-gray-500" />
+                            <span className=" text-gray-500  tracking-tight">{board.name}</span>
                         </div>
 
                         <div className="flex items-center gap-1 ml-2 border-l pl-3 border-gray-200">

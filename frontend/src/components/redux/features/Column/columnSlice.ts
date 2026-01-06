@@ -47,7 +47,7 @@ export const fetchColumn = createAsyncThunk<Column[], string>(
 );
 export const deleteColumn = createAsyncThunk("column/deleteColumn", async({boardId, columnId}:{boardId: string, columnId:string}, {rejectWithValue})=>{
     try{
-       await axiosClient.delete(`/api/boards/${boardId}/column/${columnId}`, {withCredentials: true})
+       await axiosClient.delete(`/api/boards/${boardId}/columns/${columnId}`, {withCredentials: true})
         return {boardId, columnId}
     }
     catch(error: any){
@@ -61,7 +61,6 @@ const columnSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
-            // Add Column
             .addCase(addColumn.fulfilled, (state, action) => {
                 const boardId = action.payload.board;
                 if (!state.columns[boardId]) state.columns[boardId] = [];
@@ -77,9 +76,8 @@ const columnSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            // Fetch Columns
             .addCase(fetchColumn.fulfilled, (state, action) => {
-                const boardId = action.meta.arg; // boardId is passed as argument
+                const boardId = action.meta.arg; 
                 state.columns[boardId] = action.payload;
                 state.loading = false;
                 state.error = null;

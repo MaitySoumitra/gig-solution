@@ -9,18 +9,20 @@ import { BoardContext } from "../../../context/board/BoardContext";
 
 
 interface DashBoardBodyProps {
- 
+
   onAddColumn: (boardId: string, name: string) => void,
+  onDeleteColumn: (boardId: string, columnId: string) => void
 
 
   task: Task[]
 }
 
-export const DashBoardBody = ({   onAddColumn,  task }: DashBoardBodyProps) => {
+export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardBodyProps) => {
   const [showColumnInput, setShowColumnInput] = useState(false)
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [openMenuColumn,setOpenMenuColumn]=useState<string | null>(null)
   const columns = useAppSelector(state => state.column.columns)
   const dispatch = useAppDispatch()
   const taskStatus = (task: Task) => {
@@ -42,9 +44,9 @@ export const DashBoardBody = ({   onAddColumn,  task }: DashBoardBodyProps) => {
       }))
     }
   }
-  const board =useContext(BoardContext)
-  if(!board) return null
-  const column=columns[board._id] ||[]
+  const board = useContext(BoardContext)
+  if (!board) return null
+  const column = columns[board._id] || []
 
   return (
     <div>
@@ -72,9 +74,27 @@ export const DashBoardBody = ({   onAddColumn,  task }: DashBoardBodyProps) => {
                     {task.filter(t => t.column === c._id).length}
                   </span>
                 </div>
-                <div className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none">
-                  ···
+                <div className="relative">
+                  <button className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+                    onClick={() =>setOpenMenuColumn(openMenuColumn===c._id? null :c._id)}
+                  >
+                    ···
+                  </button>
+                  {openMenuColumn===c._id &&(
+                    <div className="absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50">
+                      <button 
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      onClick={()=>{
+                        onDeleteColumn(board._id, c._id)
+                        setOpenMenuColumn(null)
+                      }}>
+                        delete Column
+                      </button>
+
+                      </div>
+                  )}
                 </div>
+
               </div>
               {task
                 .filter((t) => t.column.toString() === c._id)

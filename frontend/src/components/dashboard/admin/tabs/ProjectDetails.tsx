@@ -4,13 +4,14 @@ import { addMember } from '../../../redux/features/Board/boardSlice'
 import type { Task } from '../../../types/allType';
 
 
-import { addColumn, fetchColumn } from '../../../redux/features/Column/columnSlice';
+import { addColumn, fetchColumn, deleteColumn } from '../../../redux/features/Column/columnSlice';
 import { DashBoardHeader } from './DashBoardHeader';
 import { DashBoardBody } from './DashBoardBody';
 import { addTask, fetchTasksForColumn } from '../../../redux/features/Task/taskSlice';
 import { BoardContext } from '../../../context/board/BoardContext';
 
 export const ProjectDetails = () => {
+    const board = useContext(BoardContext)
 
     const dispatch = useAppDispatch()
 
@@ -19,20 +20,8 @@ export const ProjectDetails = () => {
     const column = useAppSelector(state => state.column.columns)
 
     const task = useAppSelector(state => state.task.task)
-
-    const board = useContext(BoardContext)
-    if (!board) return null
-
-    const handleAddMember = (boardId: string, memberId: string) => {
-        dispatch(addMember({ boardId, memberId }))
-    }
-    const handaleAddColumn = (boardId: string, name: string) => {
-        dispatch(addColumn({ boardId, name }))
-    }
-  
-
-    useEffect(() => {
-        if (board._id) {
+  useEffect(() => {
+        if (board?._id) {
             dispatch(fetchColumn(board._id))
         }
     }, [board, dispatch])
@@ -46,6 +35,22 @@ export const ProjectDetails = () => {
             })
         }
     }, [boards, column, dispatch]);
+    
+    
+
+    const handleAddMember = (boardId: string, memberId: string) => {
+        dispatch(addMember({ boardId, memberId }))
+    }
+    const handaleAddColumn = (boardId: string, name: string) => {
+        dispatch(addColumn({ boardId, name }))
+    }
+    const handaleDeleteColumn=(boardId: string, columnId: string)=>{
+        dispatch(deleteColumn({boardId, columnId}))
+
+    }
+  
+
+  
 
     return (
         <div>
@@ -55,6 +60,7 @@ export const ProjectDetails = () => {
                     />
                     <DashBoardBody
                         onAddColumn={handaleAddColumn}
+                        onDeleteColumn={handaleDeleteColumn}
                         task={task}
                     />
             </div>

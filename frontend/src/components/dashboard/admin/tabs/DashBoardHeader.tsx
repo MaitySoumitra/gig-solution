@@ -20,7 +20,7 @@ export const DashBoardHeader = ({ onAddMember }: DashBoardHeaderProps) => {
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null)
     const dropdownRef = useRef<HTMLDivElement | null>(null)
     const board=useContext(BoardContext)
-    if(!board) return null
+    
     useEffect(() => {
         const handaleClickOutside = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -30,6 +30,7 @@ export const DashBoardHeader = ({ onAddMember }: DashBoardHeaderProps) => {
         window.addEventListener("mousedown", handaleClickOutside)
         return () => window.removeEventListener("mousedown", handaleClickOutside)
     }, [])
+    if(!board) return null
 
     return (
         <div>

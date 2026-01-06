@@ -10,13 +10,13 @@ export const Sidebar = () => {
     const [createBoard, setCreateBoard] = useState<boolean>(false)
     const base = "block  py-3 px-3"
     const active = "text-blue-600 border-l-4 border-blue-600 bg-blue-50"
-    const sidebarActive = "bg-blue-100 rounded-md shadow-sm text-blue-300"
+ 
     const inactive = "text-gray-500"
 
     const dispatch = useAppDispatch();
     const user = useAppSelector(state => state.login.user)
     const board = useAppSelector(state => state.board.boards)
-    const boardName = board?.map(b => slugify(b.name))
+    
     const role = user?.role
     useEffect(() => {
         dispatch(fetchBoard())
@@ -65,7 +65,7 @@ export const Sidebar = () => {
                     })}
                 </>
             )}
-            <button onClick={() => setCreateBoard(!createBoard)} className="text-sm text-gray-400 w-full appearance-none flex justify-center items-center gap-2 p-1 border border-gray-300 border-dotted rounded"><Plus />Create</button >
+            <button onClick={() => setCreateBoard(!createBoard)} className="text-sm text-gray-400 w-full appearance-none flex justify-center items-center gap-2 p-1 border border-gray-300 border-dotted rounded"><Plus />Create Project</button >
         </div>
     )
 }
