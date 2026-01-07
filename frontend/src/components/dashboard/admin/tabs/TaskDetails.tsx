@@ -7,11 +7,13 @@ import UserSearchInput from "../../common/UserSearchInput"
 import { TaskDetailsHeader } from "../Task/TaskDetailsHeader"
 
 
+
 interface TaskDetailsProps {
     task: Task,
     onClose: () => void,
     onSave: (upDatedTask: Partial<Task>) => void,
-    status: string | null
+    status: string | null,
+    onDeleteTask: (taskId: string)=>void
 }
 // MOVE THIS OUTSIDE THE TaskDetails FUNCTION
 const EditableRow = ({
@@ -56,11 +58,13 @@ const EditableRow = ({
     );
 };
 
-export const TaskDetails = ({ task, onClose, onSave, status }: TaskDetailsProps) => {
+export const TaskDetails = ({ task, onClose, onSave, status, onDeleteTask }: TaskDetailsProps) => {
     // track which field is currently being edited
     const [activeField, setActiveField] = useState<keyof Task | null>(null);
     const [editedTask, setEditedTask] = useState<Partial<Task>>({ ...task });
     const [isdropdown, setIsdropdown] = useState(false);
+
+  
 
     const handleChange = (field: keyof Task, value: any) => {
         setEditedTask(prev => ({ ...prev, [field]: value }));
@@ -89,6 +93,7 @@ export const TaskDetails = ({ task, onClose, onSave, status }: TaskDetailsProps)
         const d = date instanceof Date ? date : new Date(date);
         return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
     };
+   
 
     type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
     const priorityColors: Record<Priority, string> = {
@@ -103,7 +108,7 @@ export const TaskDetails = ({ task, onClose, onSave, status }: TaskDetailsProps)
     return (
         <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
             <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col rounded-xl shadow-2xl">
-               <TaskDetailsHeader onClose={onClose}/>
+               <TaskDetailsHeader onClose={onClose} task={task} onDeleteTask={onDeleteTask}/>
 
                 <div className="overflow-y-auto grid md:grid-cols-3 ">
                     <div className="md:col-span-2 p-3">

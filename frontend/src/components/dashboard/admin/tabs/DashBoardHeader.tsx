@@ -10,16 +10,15 @@ interface User {
     email?: string;
     role?: string;
 }
-interface DashBoardHeaderProps {
 
-    onAddMember: (boardId: string, memberId: string) => void
-}
-export const DashBoardHeader = ({ onAddMember }: DashBoardHeaderProps) => {
+export const DashBoardHeader = () => {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null)
     const dropdownRef = useRef<HTMLDivElement | null>(null)
-    const board=useContext(BoardContext)
+    const boardDetails=useContext(BoardContext)
+    if(!boardDetails) return null
+    const {board, addMember}=boardDetails
     
     useEffect(() => {
         const handaleClickOutside = (e: MouseEvent) => {
@@ -87,7 +86,7 @@ export const DashBoardHeader = ({ onAddMember }: DashBoardHeaderProps) => {
                                     disabled={!selectedUser}
                                     onClick={() => {
                                         if (!selectedUser) return;
-                                        onAddMember(board._id, selectedUser._id)
+                                        addMember(selectedUser._id)
                                         setSelectedUser(null);
                                     }}
                                     className='mt-3 w-full px-2 py-3 bg-gray-100 hover:bg-gray-200 text-center rounded'

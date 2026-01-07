@@ -61,6 +61,16 @@ export const updateTask=createAsyncThunk<Task, {taskId: string, update:Partial<T
     }
 })
 
+export const deleteTask=createAsyncThunk("task/deleteColumn", async({taskId}:{taskId:string}, {rejectWithValue})=>{
+    try{
+        await axiosClient.delete(`/api/tasks/${taskId}`, {withCredentials: true})
+        return {taskId}
+    }
+    catch(error: any){
+        return rejectWithValue(error.response?.data?.message | error.message)
+    }
+})
+
 const taskSlice = createSlice({
     name: "taskSlice",
     initialState,
@@ -130,6 +140,20 @@ const taskSlice = createSlice({
                     state.task[index]=action.payload
                 }
 
+            })
+            .addCase(deleteTask.pending, (state)=>{
+                state.loading="pending";
+                state.error= null
+            })
+            .addCase(deleteTask.fulfilled, (state, action)=>{
+                state.loading="fulfilled";
+                const {taskId}=action.payload;
+                    state.task.filter(t=>
+                        t._id !== taskId)
+                state.error=null
+            })
+            .addCase(deleteTask.rejected, (state)=>{
+                state.loading="failed"
             })
     }
 })

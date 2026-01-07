@@ -10,14 +10,13 @@ import { BoardContext } from "../../../context/board/BoardContext";
 
 interface DashBoardBodyProps {
 
-  onAddColumn: (boardId: string, name: string) => void,
-  onDeleteColumn: (boardId: string, columnId: string) => void
-
+  
+onDeleteTask:(taskId: string)=> void
 
   task: Task[]
 }
 
-export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardBodyProps) => {
+export const DashBoardBody = ({  onDeleteTask,  task }: DashBoardBodyProps) => {
   const [showColumnInput, setShowColumnInput] = useState(false)
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
@@ -44,7 +43,10 @@ export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardB
       }))
     }
   }
-  const board = useContext(BoardContext)
+  const boardDetails = useContext(BoardContext)
+  if(!boardDetails) return null
+  const {board, addColumn, deleteColumn}=boardDetails
+
   if (!board) return null
   const column = columns[board._id] || []
 
@@ -64,7 +66,7 @@ export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardB
                 handleTaskMove(data.taskId, c._id, bottomPosition);
               }}
             >
-              <div className="flex items-center justify-between font-bold text-xs  w-[250px] ">
+              <div className="flex items-center justify-between font-bold text-xs ">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-[#0052CC] text-white px-2 py-1 rounded-[3px] uppercase tracking-wide text-[10px]">
                     <span className="mr-1.5 inline-block w-3 h-3 border-2 border-white rounded-full opacity-80"></span>
@@ -85,12 +87,11 @@ export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardB
                       <button 
                       className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                       onClick={()=>{
-                        onDeleteColumn(board._id, c._id)
+                        deleteColumn(c._id)
                         setOpenMenuColumn(null)
                       }}>
                         delete Column
                       </button>
-
                       </div>
                   )}
                 </div>
@@ -162,6 +163,7 @@ export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardB
                     task={selectedTask}
                     onClose={() => setSelectedTask(null)}
                     onSave={upDatedTask}
+                    onDeleteTask={onDeleteTask}
                   />
                 </div>
               )}
@@ -207,7 +209,7 @@ export const DashBoardBody = ({ onAddColumn, onDeleteColumn,  task }: DashBoardB
                 className="px-2 py-1 border rounded"
               />
               <button
-                onClick={() => onAddColumn(board._id, columnName)}
+                onClick={() => addColumn(columnName)}
                 className="px-3 py-1 bg-green-500 text-white rounded"
               >
                 Save

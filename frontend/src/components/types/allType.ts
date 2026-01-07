@@ -48,5 +48,6 @@ export type Task = {
     comments: Comment[],
     activityLog: Activity[],
     labels: Label[],
-    position: number
+    position: number,
+    createdAt: string
 }

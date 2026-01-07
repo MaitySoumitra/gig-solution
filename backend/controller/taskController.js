@@ -160,7 +160,7 @@ const updateTask= async(req, res)=>{
 }
 const deleteTask=async(req, res)=>{
   try{
-    const {taskId}=req.body;
+    const {taskId}=req.params;
     const deletetask=await Task.findByIdAndDelete(taskId)
     res.status(200).json("task deleted successful")
   }

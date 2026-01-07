@@ -1,24 +1,17 @@
 import { useContext, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '../../../redux/app/hook'
-import { addMember } from '../../../redux/features/Board/boardSlice'
-import type { Task } from '../../../types/allType';
-
-
-import { addColumn, fetchColumn, deleteColumn } from '../../../redux/features/Column/columnSlice';
+import {  fetchColumn,  } from '../../../redux/features/Column/columnSlice';
 import { DashBoardHeader } from './DashBoardHeader';
 import { DashBoardBody } from './DashBoardBody';
-import { addTask, fetchTasksForColumn } from '../../../redux/features/Task/taskSlice';
+import {  deleteTask, fetchTasksForColumn } from '../../../redux/features/Task/taskSlice';
 import { BoardContext } from '../../../context/board/BoardContext';
 
 export const ProjectDetails = () => {
-    const board = useContext(BoardContext)
-
+    const boardDetails = useContext(BoardContext)
+    const board=boardDetails?.board
     const dispatch = useAppDispatch()
-
     const boards = useAppSelector(state => state.board.boards)
-
     const column = useAppSelector(state => state.column.columns)
-
     const task = useAppSelector(state => state.task.task)
   useEffect(() => {
         if (board?._id) {
@@ -36,31 +29,16 @@ export const ProjectDetails = () => {
         }
     }, [boards, column, dispatch]);
     
-    
-
-    const handleAddMember = (boardId: string, memberId: string) => {
-        dispatch(addMember({ boardId, memberId }))
-    }
-    const handaleAddColumn = (boardId: string, name: string) => {
-        dispatch(addColumn({ boardId, name }))
-    }
-    const handaleDeleteColumn=(boardId: string, columnId: string)=>{
-        dispatch(deleteColumn({boardId, columnId}))
-
+     const handaleDeleteTask=(taskId:string)=>{
+        dispatch(deleteTask({taskId}))
     }
   
-
-  
-
     return (
         <div>
             <div className='max-w-6xl mx-auto'>
-                    <DashBoardHeader
-                        onAddMember={handleAddMember}
-                    />
+                    <DashBoardHeader />
                     <DashBoardBody
-                        onAddColumn={handaleAddColumn}
-                        onDeleteColumn={handaleDeleteColumn}
+                        onDeleteTask={handaleDeleteTask}
                         task={task}
                     />
             </div>
