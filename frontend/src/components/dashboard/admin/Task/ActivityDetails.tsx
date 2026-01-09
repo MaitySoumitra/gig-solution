@@ -1,71 +1,99 @@
-import { At, Paperclip, PaperPlaneRight } from "@phosphor-icons/react"
-import type { Task } from "../../../types/allType"
+import { At, Paperclip, PaperPlaneRight } from "@phosphor-icons/react";
+import { useContext, useState } from "react";
+import { BoardContext } from "../../../context/board/BoardContext";
+import type { Task } from "../../../types/allType";
+
 
 interface ActivityDetailsProps {
-  editedTask: Partial<Task>
+    editedTask: Partial<Task>;
 }
+const getRelativeTime = (date: string | Date) => {
+    if (!date) return "";
+    const now = new Date().getTime();
+    const before = new Date(date).getTime();
+    const diff = Math.floor((now - before) / 1000); // difference in seconds
 
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 84600)}d ago`;
+    
+    // Fallback to a simple date string for older items
+    return new Date(date).toLocaleDateString();
+};
+export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
+    const [commentText, setCommentText] = useState("");
+    const boardDetails = useContext(BoardContext);
+    const addComment = boardDetails?.addComment;
 
-export const ActivityDetails = ({editedTask}:ActivityDetailsProps) => {
+    const handleSendComment = async () => {
+        if (!commentText.trim() || !editedTask._id) return;
+        await addComment?.(editedTask._id, commentText);
+        setCommentText("");
+    };
+
     return (
-        <div className="bg-white border-l border-gray-200 shadow-sm space-y-1 h-full">
-            <h3 className="font-medium text-gray-400 mb-4  p-3 border-b border-gray-200">Activity</h3>
+        <div className="bg-white border-l border-gray-200 shadow-sm flex flex-col h-full">
+            <h3 className="font-medium text-gray-600 p-4 border-b border-gray-100 uppercase text-xs tracking-widest">
+                Activity
+            </h3>
 
-            <div className="flex flex-col  bg-white overflow-hidden max-w-2xl">
-                {/* 1. Activity & Comments Feed Area */}
-                <div className="p-4 h-64 overflow-y-auto space-y-4 bg-white">
-                    {/* Activity Logs (e.g., Priority changes) */}
-                    {editedTask.activityLog?.map((a, i) => (
-                        <div key={i} className="flex items-center gap-3 text-xs text-gray-500">
-                            <span className="text-gray-400">•</span>
-                            <span>{a.action}</span>
-                            <span className="ml-auto text-gray-400">20 mins</span>
-                        </div>
-                    ))}
-
-                    {/* User Comments */}
-                    {editedTask.comments?.map((c, i) => (
-                        <div key={i} className="flex flex-col text-sm border-l-2 border-gray-100 pl-3 py-1">
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="font-semibold text-gray-700">{c.user[0]?.name}</span>
-                                <span className="text-[10px] text-gray-400">Apr 21, 4:12 pm</span>
+            {/* Feed Area */}
+            <div className="flex-grow p-4 overflow-y-auto space-y-6">
+                {[
+                    ...(editedTask.activityLog?.map(a => ({ ...a, type: 'activity' })) || []),
+                    ...(editedTask.comments?.map(c => ({ ...c, type: 'comment' })) || [])
+                ]
+                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                .reverse() // Showing newest at the top is usually better for activity feeds
+                .map((item: any, i) => (
+                    <div key={i} className="flex flex-col gap-1">
+                        {item.type === 'activity' ? (
+                            <div className="flex items-start gap-2 text-xs text-gray-500">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                <p>
+                                    <span className="font-bold text-gray-700">{item.user?.name}</span>
+                                    {" "}{item.action}
+                                </p>
                             </div>
-                            <p className="text-gray-600">{c.text}</p>
-                        </div>
-                    ))}
-                </div>
-
-                {/* 2. Custom Input Area */}
-                <div className="border-t border-gray-200 p-3 bg-white">
-                    <div className="border border-gray-200 rounded-md ">
-                        <textarea
-                            className="w-full p-3 text-sm outline-none resize-none"
-                            placeholder="Write a comment..."
-                            rows={2}
-                        />
-
-                        <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50/50">
-                            <div className="flex items-center gap-1">
-                                {/* Action Buttons */}
-                                <button className="p-2 hover:bg-gray-200 rounded text-gray-500 transition-colors">
-                                    <Paperclip size={18} />
-                                </button>
-                                <button className="p-2 hover:bg-gray-200 rounded text-gray-500 transition-colors">
-                                    <At size={18} />
-                                </button>
+                        ) : (
+                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                <p className="text-xs font-bold text-gray-800 mb-1">{item.user?.name}</p>
+                                <p className="text-sm text-gray-600 leading-tight">{item.text}</p>
                             </div>
+                        )}
+                        {/* Custom Time Helper used here */}
+                        <span className="text-[10px] text-gray-400 ml-3">
+                            {getRelativeTime(item.createdAt)}
+                        </span>
+                    </div>
+                ))}
+            </div>
 
-                            <div className="flex items-center gap-3">
-                                <button className="text-gray-300 hover:text-blue-500 transition-colors">
-                                    <PaperPlaneRight size={20} weight="fill" />
-                                </button>
-                            </div>
+            {/* Input Area */}
+            <div className="p-4 bg-white border-t border-gray-100">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <textarea
+                        className="w-full p-3 text-sm outline-none resize-none block"
+                        placeholder="Write a comment..."
+                        rows={2}
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                    />
+                    <div className="flex items-center justify-between px-3 py-2 bg-gray-50/50 border-t border-gray-100">
+                        <div className="flex gap-2">
+                            <button className="text-gray-400 hover:text-gray-600"><Paperclip size={18} /></button>
+                            <button className="text-gray-400 hover:text-gray-600"><At size={18} /></button>
                         </div>
+                        <button 
+                            onClick={handleSendComment}
+                            className={`${commentText.trim() ? 'text-blue-500' : 'text-gray-300'}`}
+                        >
+                            <PaperPlaneRight size={20} weight="fill" />
+                        </button>
                     </div>
                 </div>
             </div>
-
-
         </div>
-    )
-}
+    );
+};

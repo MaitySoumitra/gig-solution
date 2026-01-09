@@ -94,12 +94,21 @@ const boardSlice = createSlice({
                     state.boards = [],
                     state.error = action.payload as string
             })
+            // boardSlice.ts extraReducers section
+            .addCase(addMember.pending, (state) => {
+                state.loading = "pending";
+            })
             .addCase(addMember.fulfilled, (state, action: PayloadAction<Board>) => {
-    state.boards = state.boards.map(board =>
-        board._id === action.payload._id ? action.payload : board
-    );
-    state.error = null;
-});
+                state.loading = "succeeded"; // MUST reset loading here
+                state.boards = state.boards.map(board =>
+                    board._id === action.payload._id ? action.payload : board
+                );
+                state.error = null;
+            })
+            .addCase(addMember.rejected, (state, action) => {
+                state.loading = "failed";
+                state.error = action.payload as string;
+            })
 
     }
 })

@@ -136,15 +136,14 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                     {status || 'OPEN'}
                                 </span>
                             </div>
-
                             <EditableRow
                                 field="assignedTo"
                                 label="ASSIGNEES"
                                 icon={<UserIcon size={20} />}
                                 activeField={activeField}
                                 setActiveField={setActiveField}
-                                handleFieldSave={handleFieldSave}    // MUST PASS THIS
-                                handleFieldCancel={handleFieldCancel} // MUST PASS THIS
+                                handleFieldSave={handleFieldSave}    
+                                handleFieldCancel={handleFieldCancel} 
                                 editComponent={
                                     <UserSearchInput onUserSelect={(selectedUser) => {
                                         const currentAssigned = Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo : [];

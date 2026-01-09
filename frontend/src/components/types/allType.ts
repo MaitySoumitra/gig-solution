@@ -21,12 +21,14 @@ export type Board = {
 type Comment = {
     _id: string
     user: User[],
-    text: string
+    text: string,
+     createdAt: string
 }
 type Activity = {
     _id: string
     user: User[],
-    action: string
+    action: string,
+     createdAt: string
 }
 export type Label={
     name: string,

@@ -51,110 +51,103 @@ export const moveTask = createAsyncThunk<{ taskId: string, newColumnId: string, 
     }
 })
 
-export const updateTask=createAsyncThunk<Task, {taskId: string, update:Partial<Task>}, {rejectValue: string}>( "task/updateTask", async({taskId, update},{rejectWithValue})=>{
-    try{
-       const res= await axiosClient.patch(`/api/tasks/${taskId}`,  update, {withCredentials: true})
+export const updateTask = createAsyncThunk<Task, { taskId: string, update: Partial<Task> }, { rejectValue: string }>("task/updateTask", async ({ taskId, update }, { rejectWithValue }) => {
+    try {
+        const res = await axiosClient.patch(`/api/tasks/${taskId}`, update, { withCredentials: true })
         return res.data
     }
-    catch(error: any){
+    catch (error: any) {
         return rejectWithValue(error.response?.data?.message || error.message)
     }
 })
 
-export const deleteTask=createAsyncThunk("task/deleteColumn", async({taskId}:{taskId:string}, {rejectWithValue})=>{
-    try{
-        await axiosClient.delete(`/api/tasks/${taskId}`, {withCredentials: true})
-        return {taskId}
+export const deleteTask = createAsyncThunk("task/deleteColumn", async ({ taskId }: { taskId: string }, { rejectWithValue }) => {
+    try {
+        await axiosClient.delete(`/api/tasks/${taskId}`, { withCredentials: true })
+        return { taskId }
     }
-    catch(error: any){
+    catch (error: any) {
         return rejectWithValue(error.response?.data?.message | error.message)
     }
 })
+
+export const addComment = createAsyncThunk(
+    "tasks/addComment",
+    async ({ taskId, text }: { taskId: string; text: string }) => {
+        const response = await axiosClient.post(`/api/tasks/${taskId}/comments`, { text });
+        return response.data; // This should be the updated task from the backend
+    }
+);
 
 const taskSlice = createSlice({
     name: "taskSlice",
     initialState,
     reducers: {},
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchTasksForColumn.pending, (state) => {
-                state.loading = "pending";
-                state.error = null;
-            })
-            .addCase(fetchTasksForColumn.fulfilled, (state, action: PayloadAction<Task[]>) => {
-                state.loading = "fulfilled";
-                // Replace tasks for this column
-                action.payload.forEach(task => {
-                    const index = state.task.findIndex(t => t._id === task._id);
-                    if (index >= 0) state.task[index] = task;
-                    else state.task.push(task);
+   extraReducers: (builder) => {
+    builder
+        // Fetch
+        .addCase(fetchTasksForColumn.pending, (state) => { state.loading = "pending"; state.error = null; })
+        .addCase(fetchTasksForColumn.fulfilled, (state, action) => {
+            state.loading = "fulfilled";
+            action.payload.forEach(task => {
+                const index = state.task.findIndex(t => t._id === task._id);
+                if (index >= 0) state.task[index] = task;
+                else state.task.push(task);
+            });
+        })
+        .addCase(fetchTasksForColumn.rejected, (state, action) => { state.loading = "failed"; state.error = action.payload as string; })
+
+        // Add
+        .addCase(addTask.pending, (state) => { state.loading = "pending"; state.error = null; })
+        .addCase(addTask.fulfilled, (state, action) => {
+            state.loading = "fulfilled";
+            state.task.push(action.payload);
+        })
+        .addCase(addTask.rejected, (state, action) => { state.loading = "failed"; state.error = action.payload as string; })
+
+        // Move
+        .addCase(moveTask.pending, (state, action) => {
+            state.loading = "pending"; // Start loading for move
+            const { taskId, newColumnId, newPosition } = action.meta.arg;
+            const taskToMove = state.task.find(t => t._id === taskId);
+            if (taskToMove) {
+                taskToMove.column = newColumnId;
+                taskToMove.position = newPosition;
+                state.task.forEach(t => {
+                    if (t.column === newColumnId && t._id !== taskId) {
+                        if (t.position >= newPosition) t.position += 1;
+                    }
                 });
-                state.error = null;
-            })
-            .addCase(fetchTasksForColumn.rejected, (state, action) => {
-                state.loading = "failed";
-                state.error = action.payload as string;
-            })
-            .addCase(addTask.pending, (state) => {
-                state.loading = "pending",
-                    state.error = "null"
-            })
-            .addCase(addTask.fulfilled, (state, actions: PayloadAction<Task>) => {
-                state.loading = "fulfilled",
-                    state.task.push(actions.payload),
-                    state.error = null
-            })
-            .addCase(addTask.rejected, (state, action) => {
-                state.loading = "failed",
-                    state.error = action.payload as string
-            })
-            // taskSlice.ts
+            }
+        })
+        .addCase(moveTask.fulfilled, (state) => { state.loading = "fulfilled"; })
+        .addCase(moveTask.rejected, (state, action) => { state.loading = "failed"; state.error = action.payload as string; })
 
-            .addCase(moveTask.pending, (state, action) => {
-                const { taskId, newColumnId, newPosition } = action.meta.arg;
-                const taskToMove = state.task.find(t => t._id === taskId);
-                if (taskToMove) {
-                    taskToMove.column = newColumnId;
-                    taskToMove.position = newPosition;
+        // Update (CRITICAL FIX)
+        .addCase(updateTask.pending, (state) => { state.loading = "pending"; })
+        .addCase(updateTask.fulfilled, (state, action) => {
+            state.loading = "fulfilled"; // MUST reset loading here
+            const index = state.task.findIndex(t => t._id === action.payload._id);
+            if (index !== -1) state.task[index] = action.payload;
+        })
+        .addCase(updateTask.rejected, (state, action) => { state.loading = "failed"; state.error = action.payload as string; })
 
-                    state.task.forEach(t => {
-                        if (t.column === newColumnId && t._id !== taskId) {
-                            if (t.position >= newPosition) {
-                                t.position += 1; 
-                            }  
-                        }
-                    });
-                }
-            })
-            .addCase(moveTask.fulfilled, (state) => {
-                state.loading = "fulfilled";
-            })
-            .addCase(moveTask.rejected, (state, action) => {
-                state.loading = "failed";
-                state.error = action.payload as string;
-            })
+        // Delete
+        .addCase(deleteTask.pending, (state) => { state.loading = "pending"; })
+        .addCase(deleteTask.fulfilled, (state, action) => {
+            state.loading = "fulfilled"; // MUST reset loading here
+            state.task = state.task.filter(t => t._id !== (action.payload as any).taskId);
+        })
+        .addCase(deleteTask.rejected, (state) => { state.loading = "failed"; })
 
-            .addCase(updateTask.fulfilled, (state, action)=>{
-                const index=state.task.findIndex(t=> t._id===action.payload._id)
-                if(index !==-1){
-                    state.task[index]=action.payload
-                }
-
-            })
-            .addCase(deleteTask.pending, (state)=>{
-                state.loading="pending";
-                state.error= null
-            })
-            .addCase(deleteTask.fulfilled, (state, action)=>{
-                state.loading="fulfilled";
-                const {taskId}=action.payload;
-                    state.task.filter(t=>
-                        t._id !== taskId)
-                state.error=null
-            })
-            .addCase(deleteTask.rejected, (state)=>{
-                state.loading="failed"
-            })
-    }
+        // Comment (CRITICAL FIX)
+        .addCase(addComment.pending, (state) => { state.loading = "pending"; })
+        .addCase(addComment.fulfilled, (state, action) => {
+            state.loading = "fulfilled"; // MUST reset loading here
+            const index = state.task.findIndex(t => t._id === action.payload._id);
+            if (index !== -1) state.task[index] = action.payload;
+        })
+        .addCase(addComment.rejected, (state) => { state.loading = "failed"; });
+}
 })
 export default taskSlice.reducer
