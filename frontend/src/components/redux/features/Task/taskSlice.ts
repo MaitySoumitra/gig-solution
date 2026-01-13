@@ -88,11 +88,29 @@ export const addComment = createAsyncThunk(
         return response.data; // This should be the updated task from the backend
     }
 );
+        // 1. Add this Thunk
+export const fetchAllTasks = createAsyncThunk<Task[], void, { rejectValue: string }>(
+    "tasks/fetchAllTasks",
+    async (_, { rejectWithValue }) => {
+        try {
+            // Adjust this URL to your actual 'get all tasks' endpoint
+            const res = await axiosClient.get(`/api/tasks`, { withCredentials: true });
+            return res.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || error.message);
+        }
+    }
+);
+
 
 const taskSlice = createSlice({
     name: "taskSlice",
     initialState,
-    reducers: {},
+    reducers: {
+    clearTasks: (state) => {
+      state.task = []; // Clears the array when switching boards
+    }
+  },
    extraReducers: (builder) => {
     builder
         // Fetch
@@ -163,6 +181,16 @@ const taskSlice = createSlice({
             state.loading="failed"
             state.error=action.payload as string
         })
+        .addCase(fetchAllTasks.fulfilled, (state, action) => {
+    state.loading = "fulfilled";
+    // This checks if payload is an array; if not, it looks for a .tasks or .data property
+    const incomingTasks = Array.isArray(action.payload) 
+        ? action.payload 
+        : (action.payload as any).tasks || (action.payload as any).data || [];
+    
+    state.task = incomingTasks; 
+})
 }
 })
 export default taskSlice.reducer
+export const { clearTasks } = taskSlice.actions;

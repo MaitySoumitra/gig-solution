@@ -6,7 +6,7 @@ import { slugify } from "../../hooks/slugify"
 import { addMember, fetchBoard } from "../../redux/features/Board/boardSlice"
 import type { Board, Task } from "../../types/allType"
 import { addColumn, deleteColumn, fetchColumn } from "../../redux/features/Column/columnSlice"
-import { addComment, deleteTask, fetchTasksForColumn, moveTask, updateProgress, updateTask } from "../../redux/features/Task/taskSlice"
+import { addComment, clearTasks, deleteTask, fetchTasksForColumn, moveTask, updateProgress, updateTask } from "../../redux/features/Task/taskSlice"
 
 interface BoardProviderProps {
   board: Board | null
@@ -36,9 +36,6 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
 
   const { boardSlug } = useParams()
 
-  useEffect(() => {
-    dispatch(fetchBoard())
-  }, [dispatch])
 
 
   const currentBoard = useMemo(() => {
@@ -51,25 +48,65 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, [boards, boardSlug]);
 
-  useEffect(()=>{
-    if(currentBoard?._id){
-      dispatch(fetchBoard())
-      dispatch(fetchColumn(currentBoard._id))
-    }
-  }, [currentBoard?._id, dispatch])
+ // 1. Fetch Board and Columns only when boardSlug changes
+useEffect(() => {
+  if (boardSlug) {
+    // Wrap this in a single action if possible, or sequence them
+    dispatch(fetchBoard()).then((res) => {
+       // Logic to find current board from results
+    });
+  }
+}, [boardSlug, dispatch]);
+useEffect(() => {
+  // If we are on HomeTab (no boardSlug), fetch tasks for ALL boards
+  if (!boardSlug && boards.length > 0) {
+    boards.forEach(b => {
+      dispatch(fetchColumn(b._id)); // You need the columns to get the tasks
+    });
+  }
+}, [boardSlug, boards, dispatch]);
 
-  useEffect(()=>{
-    const boardId=currentBoard?._id
-    if(boardId && columns[boardId]){
-      columns[boardId].forEach((col)=>{
-        dispatch(fetchTasksForColumn({boardId, columnId: col._id}))
-      })
-    }
-  }, [currentBoard?._id, columns, dispatch])
+// 2. Fetch columns only when the currentBoard ID is confirmed
+useEffect(() => {
+  if (currentBoard?._id) {
+    dispatch(fetchColumn(currentBoard._id));
+  }
+}, [currentBoard?._id]);
 
- const getTaskByColumn=(columnId: string)=>{
-  return tasks.filter(t=>t.column===columnId)
- }
+// 3. Fetch Tasks ONLY when columns are first populated
+// 3. Fetch Tasks ONLY when columns are first populated
+useEffect(() => {
+  const boardId = currentBoard?._id;
+  // Use optional chaining and fallback to empty array
+  const boardColumns = boardId ? (columns[boardId] || []) : [];
+  
+  if (boardId && boardColumns.length > 0) {
+    boardColumns.forEach((col) => {
+      dispatch(fetchTasksForColumn({ boardId, columnId: col._id }));
+    });
+  }
+  // FIX: Access length safely using optional chaining
+}, [currentBoard?._id, columns[currentBoard?._id || ""]?.length, dispatch]);
+
+ // Inside BoardProvider.tsx
+const getTaskByColumn = (columnId: string) => {
+  return tasks.filter(t => {
+    // 1. Check if task belongs to the column
+    const tColId = typeof t.column === 'object' ? (t.column as any)._id : t.column;
+    const isRightColumn = tColId?.toString() === columnId.toString();
+
+    // 2. Check if task belongs to the CURRENT board
+    const tBoardId = typeof t.board === 'object' ? (t.board as any)._id : t.board;
+    const isRightBoard = tBoardId?.toString() === currentBoard?._id?.toString();
+
+    return isRightColumn && isRightBoard;
+  });
+};
+useEffect(() => {
+  // When we switch boards, clear the old tasks from Redux 
+  // so the new ones can load fresh.
+  dispatch(clearTasks());
+}, [boardSlug, dispatch]);
 
   const contextValue: BoardProviderProps = useMemo(() => ({
     board: currentBoard,

@@ -259,5 +259,21 @@ const updateTaskProgress = async (req, res) => {
     res.status(500).json({ message: "Failed to update task" });
   }
 };
+const getAllUserTasks = async (req, res) => {
+  try {
+    // 1. Find all boards where the user is a member
+    const boards = await Board.find({ members: req.user._id }).select('_id');
+    const boardIds = boards.map(b => b._id);
 
-module.exports = { createTask, getTasksForColumn, moveTask, updateTask, deleteTask, addTaskComment, updateTaskProgress }
+    // 2. Find all tasks belonging to those boards
+    const tasks = await Task.find({ board: { $in: boardIds } })
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch all tasks" });
+  }
+};
+
+module.exports = { createTask, getTasksForColumn, moveTask, updateTask, deleteTask, addTaskComment, updateTaskProgress, getAllUserTasks }

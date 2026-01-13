@@ -56,13 +56,7 @@ const TaskSchema = new Schema({
         ref: 'Board',
         required: true
     },
-    subtasks: [{
-        title: String,
-        isCompleted: {
-            type: Boolean,
-            default: false
-        }
-    }],
+    
     attachments: [{
         fileName: String,
         fileUrl: String,

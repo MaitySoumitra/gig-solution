@@ -16,7 +16,7 @@ const  createColumn= async(req, res)=>{
         const newColumn=new Column({
             name,
             board:boardId,
-            task:[],
+            
         })
         await newColumn.save()
 
@@ -34,15 +34,14 @@ const  createColumn= async(req, res)=>{
         return res.status(500).json({message: 'Server error: failedto create column '})
     }
 }
-const fetchColumn= async(req, res)=>{
-    const {boardId}=req.params;
-    try{
-        const columns= await Column.find({board:boardId}).populate('task')
-        res.status(200).json(columns)
-    }
-    catch(error){
-        console.error('something went wrong', error)
-        res.status(500).json({message: "server error cant fetch columns "})
+const fetchTasksByBoard = async (req, res) => {
+    const { boardId } = req.params;
+    try {
+        // Find all tasks that belong to this board
+        const tasks = await Task.find({ board: boardId });
+        res.status(200).json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching tasks" });
     }
 }
 const deleteColumn= async(req, res)=>{
@@ -69,6 +68,16 @@ const deleteColumn= async(req, res)=>{
         res.status(500).json({message: "Internal server error"})
     }
 }
+// Controller: getColumns
+const getColumns = async (req, res) => {
+  try {
+    const columns = await Column.find({ board: req.params.boardId });
+    // Do NOT .populate('tasks') if the field isn't in your Schema!
+    res.status(200).json(columns);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error fetching columns" });
+  }
+};
 
-
-module.exports= {createColumn, fetchColumn, deleteColumn}
+module.exports= {createColumn, fetchTasksByBoard, deleteColumn, getColumns}

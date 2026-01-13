@@ -1,43 +1,46 @@
-import { useContext } from "react";
-import { useAppSelector } from "../../../redux/app/hook";
-import { BoardContext } from "../../../context/board/BoardContext";
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../../../redux/app/hook";
+import { fetchAllTasks } from "../../../redux/features/Task/taskSlice"; 
 
 export const HomeTab = () => {
+    const dispatch = useAppDispatch();
     const user = useAppSelector(state => state.login.user);
     const boards = useAppSelector(state => state.board.boards);
-    
-    // Access the context
-    const boardContext = useContext(BoardContext);
-    if (!boardContext) return null;
-
-    // 'task' here contains ALL tasks fetched by the provider
-    const { task: allTasks } = boardContext;
+    const allTasks = useAppSelector(state => state.task.task) || []; // Fallback to empty array
+    const loading = useAppSelector(state => state.task.loading);
+console.log("DEBUG - Boards Count:", boards.length);
+    console.log("DEBUG - Tasks Data:", allTasks);
+    useEffect(() => {
+        // This triggers the API call to fill state.task.task
+        dispatch(fetchAllTasks());
+    }, [dispatch]);
 
     const calculateBoardProgress = (boardId: string) => {
-        // Filter tasks belonging to this specific board
-        // Note: Check your Task type to see if board is t.board._id or t.board
         const boardTasks = allTasks.filter(t => {
-            const id = typeof t.board === 'object' ? (t.board as any)._id : t.board;
-            return id === boardId;
+            // Normalize ID comparison to strings
+            const tBoardId = typeof t.board === 'object' ? (t.board as any)._id : t.board;
+            return String(tBoardId) === String(boardId);
         });
 
         if (boardTasks.length === 0) return 0;
-
         const totalSum = boardTasks.reduce((acc, t) => acc + (t.progress || 0), 0);
         return Math.round(totalSum / boardTasks.length);
     };
+
+    if (loading === 'pending' && allTasks.length === 0) {
+        return <div className="p-8">Loading dashboard...</div>;
+    }
 
     return (
         <div className="flex h-screen w-full bg-gray-50"> 
             <div className="flex-1 p-8 overflow-y-auto">
                 <h2 className="text-3xl font-bold mb-8">Welcome 👋 {user?.name}</h2>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {boards.map((boardItem) => {
                         const progress = calculateBoardProgress(boardItem._id);
                         const boardTasksCount = allTasks.filter(t => {
                             const id = typeof t.board === 'object' ? (t.board as any)._id : t.board;
-                            return id === boardItem._id;
+                            return String(id) === String(boardItem._id);
                         }).length;
 
                         return (

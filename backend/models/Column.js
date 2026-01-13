@@ -6,12 +6,6 @@ const ColumnSchema= new Schema({
         type: String,
         required: true,
     },
-    task:[{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Task',
-        required: true
-    }],
-   
     board:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Board',
@@ -19,7 +13,6 @@ const ColumnSchema= new Schema({
     },
     order:{
         type: Number,
-        
     }
 
 })

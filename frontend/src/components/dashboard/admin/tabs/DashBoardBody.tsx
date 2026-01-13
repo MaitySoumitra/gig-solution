@@ -4,29 +4,24 @@ import TaskView from "../../../redux/features/Task/taskView";
 import { CalendarBlank, Flag, Plus, Tag, X } from "@phosphor-icons/react";
 import { TaskDetails } from "./TaskDetails";
 
-import {  useAppSelector } from "../../../redux/app/hook";
+import { useAppSelector } from "../../../redux/app/hook";
 import { BoardContext } from "../../../context/board/BoardContext";
-
-
-
 
 export const DashBoardBody = () => {
   const [showColumnInput, setShowColumnInput] = useState(false)
   const [columnName, setColumnName] = useState("")
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [openMenuColumn,setOpenMenuColumn]=useState<string | null>(null)
+  const [openMenuColumn, setOpenMenuColumn] = useState<string | null>(null)
   const columns = useAppSelector(state => state.column.columns)
 
-  
-
   const boardDetails = useContext(BoardContext)
-  if(!boardDetails) return null
-  const {board, addColumn, deleteColumn, moveTask, task }=boardDetails
+  if (!boardDetails) return null
+  const { board, addColumn, deleteColumn, moveTask, task } = boardDetails
 
   if (!board) return null
   const column = columns[board._id] || []
-const taskStatus = (task: Task) => {
+  const taskStatus = (task: Task) => {
     return column.find(c => c._id === task.column)?.name || null
   }
   return (
@@ -57,29 +52,34 @@ const taskStatus = (task: Task) => {
                 </div>
                 <div className="relative">
                   <button className="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
-                    onClick={() =>setOpenMenuColumn(openMenuColumn===c._id? null :c._id)}
+                    onClick={() => setOpenMenuColumn(openMenuColumn === c._id ? null : c._id)}
                   >
                     ···
                   </button>
-                  {openMenuColumn===c._id &&(
+                  {openMenuColumn === c._id && (
                     <div className="absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50">
-                      <button 
-                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                      onClick={()=>{
-                        deleteColumn(c._id)
-                        setOpenMenuColumn(null)
-                      }}>
+                      <button
+                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          deleteColumn(c._id)
+                          setOpenMenuColumn(null)
+                        }}>
                         delete Column
                       </button>
-                      </div>
+                    </div>
                   )}
                 </div>
 
               </div>
               {task
-                .filter((t) => t.column.toString() === c._id)
+                .filter((t) => {
+                  const taskColumnId = typeof t.column === 'object' ? t.column._id : t.column;
+                  return taskColumnId?.toString() === c._id.toString();
+                })
                 .sort((a, b) => (a.position || 0) - (b.position || 0))
                 .map((t, index) => (
+
+
                   <div
                     key={t._id}
                     draggable
@@ -140,7 +140,7 @@ const taskStatus = (task: Task) => {
                   <TaskDetails
                     status={taskStatus(selectedTask)}
                     task={selectedTask}
-                    onClose={() => setSelectedTask(null)}  
+                    onClose={() => setSelectedTask(null)}
                   />
                 </div>
               )}
