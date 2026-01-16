@@ -18,31 +18,31 @@ export type Board = {
     columns: Column[];
 };
 
-// --- New Time Tracking Types ---
+
 export type DailyLog = {
-    date: string;    // "YYYY-MM-DD"
-    duration: number; // in milliseconds
+    date: string;    
+    duration: number; 
 };
 
 export type TimeManagement = {
-    estimatedTime: number;    // Total hours required (e.g., 20)
-    totalLoggedTime: number;  // Sum of all durations in milliseconds
-    dailyLogs: DailyLog[];    // Array for the 4h, 8h, 8h breakdown
-    activeStartTime: string | null; // ISO Date string when "Start" clicked
-    isRunning: boolean;       // Status of the timer
+    estimatedTime: number;    
+    totalLoggedTime: number;
+    delay:number;  
+    dailyLogs: DailyLog[];    
+    activeStartTime: string | null; 
+    isRunning: boolean;      
 };
 
-// --- Updated Sub-types ---
 export type Comment = {
     _id: string;
-    user: User; // Changed from User[] as a comment usually belongs to one person
+    user: User; 
     text: string;
     createdAt: string;
 };
 
 export type Activity = {
     _id: string;
-    user: User; // Changed from User[]
+    user: User; 
     action: string;
     createdAt: string;
     details?: {
@@ -70,25 +70,24 @@ export type Subtask = {
     isCompleted: boolean;
 };
 
-// --- Final Updated Task Type ---
 export type Task = {
     _id: string;
     title: string;
     progress: number;
     description: string;
     priority: "Low" | "Medium" | "High" | "Critical";
-    dueDate: string | Date; // Date usually comes as a string from JSON
+    dueDate: string | Date; 
     startDate: string | Date;
     assignedTo: User[];
-    column: any; // Can be string ID or populated Column object
-    board: any;  // Can be string ID or populated Board object
+    column: any; 
+    board: any;  
     subtasks: Subtask[];
-    attachments: Attachment[]; // Fixed naming from "attachment"
+    attachments: Attachment[]; 
     comments: Comment[];
     activityLog: Activity[];
     labels: Label[];
     position: number;
-    timeManagement?: TimeManagement; // Added time tracking object
+    timeManagement?: TimeManagement; 
     createdAt: string;
     updatedAt: string;
 };

@@ -71,6 +71,7 @@ const TaskSchema = new Schema({
     timeManagement: {
         estimatedTime: { type: Number, default: 0 }, 
         totalLoggedTime: { type: Number, default: 0 }, 
+        delay: { type: Number, default: 0 },
         dailyLogs: [{
             date: { type: String }, 
             duration: { type: Number, default: 0 } 

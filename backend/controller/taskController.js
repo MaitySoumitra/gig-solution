@@ -48,7 +48,6 @@ const createTask = async (req, res) => {
     res.status(500).json({ message: 'Server Error: Failed to create task' });
   }
 }
-
 const getTasksForColumn = async (req, res) => {
   try {
     const { boardId, columnId } = req.params;
@@ -292,32 +291,47 @@ const getMyIndividualTasks = async (req, res) => {
 const toggleTimer = async (req, res) => {
     const { taskId } = req.params;
     const task = await Task.findById(taskId);
-
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     const now = new Date();
 
     if (task.timeManagement.isRunning) {
-        // --- STOPPING THE TIMER ---
         const startTime = new Date(task.timeManagement.activeStartTime);
         const workDone = now.getTime() - startTime.getTime();
-        const todayStr = now.toISOString().split('T')[0];
+        const deadline = task.dueDate ? new Date(task.dueDate).getTime() : null;
+        const goalMs = (task.timeManagement.estimatedTime || 0) * 3600000;
+        
+        let sessionDelay = 0;
 
-        // Update total time
-        task.timeManagement.totalLoggedTime += workDone;
-
-        // Update daily log breakdown
-        const dayEntry = task.timeManagement.dailyLogs.find(log => log.date === todayStr);
-        if (dayEntry) {
-            dayEntry.duration += workDone;
-        } else {
-            task.timeManagement.dailyLogs.push({ date: todayStr, duration: workDone });
+        // --- CALCULATION A: Check Due Date Delay ---
+        if (deadline && now.getTime() > deadline) {
+            sessionDelay = startTime.getTime() > deadline 
+                ? workDone 
+                : now.getTime() - deadline;
         }
+
+        // --- CALCULATION B: Check Estimated Goal Overtime ---
+        // If the total time (including this session) exceeds the goal
+        const totalAfterSession = task.timeManagement.totalLoggedTime + workDone;
+        if (goalMs > 0 && totalAfterSession > goalMs) {
+            const overtimeInThisSession = totalAfterSession - Math.max(task.timeManagement.totalLoggedTime, goalMs);
+            // Use Math.max to ensure we only add delay that isn't already counted by the deadline
+            sessionDelay = Math.max(sessionDelay, overtimeInThisSession);
+        }
+
+        // Update Task Fields
+        task.timeManagement.delay = (task.timeManagement.delay || 0) + sessionDelay;
+        task.timeManagement.totalLoggedTime += workDone;
+        
+        // Log daily progress
+        const todayStr = now.toISOString().split('T')[0];
+        const dayEntry = task.timeManagement.dailyLogs.find(log => log.date === todayStr);
+        if (dayEntry) dayEntry.duration += workDone;
+        else task.timeManagement.dailyLogs.push({ date: todayStr, duration: workDone });
 
         task.timeManagement.isRunning = false;
         task.timeManagement.activeStartTime = null;
     } else {
-        // --- STARTING THE TIMER ---
         task.timeManagement.isRunning = true;
         task.timeManagement.activeStartTime = now;
     }

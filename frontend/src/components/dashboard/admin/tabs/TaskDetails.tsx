@@ -2,7 +2,7 @@ import { useContext, useState } from "react"
 import type { Task } from "../../../types/allType"
 import {
     Pencil, X, Check, Calendar, User as UserIcon,
-    ListChecks, Paperclip, Flag, Clock, Target, ChartBar
+    ListChecks, Paperclip, Flag, Clock, Target, ChartBar, WarningCircle
 } from "@phosphor-icons/react"
 import UserSearchInput from "../../common/UserSearchInput"
 import { TaskDetailsHeader } from "../Task/TaskDetailsHeader"
@@ -100,31 +100,33 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
 
     const msToHours = (ms: number = 0) => (ms / 3600000).toFixed(1);
 
+    // --- UPDATED TIME LOGIC ---
+    const goalMs = (editedTask.timeManagement?.estimatedTime || 0) * 3600000;
+    const loggedMs = editedTask.timeManagement?.totalLoggedTime || 0;
+
+    // 1. Progress capped at 100%
+    const progressPercent = goalMs > 0 ? Math.min((loggedMs / goalMs) * 100, 100) : 0;
+
+    // 2. Calculate Overtime (Delay)
+    // If logged time exceeds goal, show the difference as delay
+    const overtimeMs = loggedMs > goalMs ? loggedMs - goalMs : 0;
+    const delayHours = (overtimeMs / 3600000).toFixed(1);
+
+    const formatToFourDigit = (ms: number) => {
+        if (!ms) return "00:00:00";
+        const totalSeconds = Math.floor(ms / 1000);
+        const seconds = Math.floor(totalSeconds % 60);
+        const minutes = Math.floor((totalSeconds / 60) % 60);
+        const hours = Math.floor(totalSeconds / 3600);
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
+
     type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
     const priorityColors: Record<Priority, string> = {
         Low: "text-blue-500",
         Medium: "text-green-500",
         High: "text-yellow-500",
         Critical: "text-red-500",
-    };
-    const goalMs = (editedTask.timeManagement?.estimatedTime || 0) * 3600000;
-    const loggedMs = editedTask.timeManagement?.totalLoggedTime || 0;
-    const progressPercent = goalMs > 0 ? Math.min((loggedMs / goalMs) * 100, 100) : 0;
-
-    const formatToFourDigit = (ms: number) => {
-        if (!ms) return "00:00:00";
-
-        const totalSeconds = Math.floor(ms / 1000);
-        const seconds = Math.floor(totalSeconds % 60);
-        const minutes = Math.floor((totalSeconds / 60) % 60);
-        const hours = Math.floor(totalSeconds / 3600);
-
-        // .padStart(2, '0') ensures "5" becomes "05"
-        const hh = String(hours).padStart(2, '0');
-        const mm = String(minutes).padStart(2, '0');
-        const ss = String(seconds).padStart(2, '0');
-
-        return `${hh}:${mm}:${ss}`;
     };
 
     return (
@@ -193,10 +195,7 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                                 handleChange('assignedTo', [...current, selectedUser]);
                                             }
                                         }}
-                                        // 1. Prevents re-adding people already in the task
                                         excludeUserIds={Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo.map(u => u._id) : []}
-
-                                        // 2. NEW: Restricts search to only existing board members
                                         includeUserIds={boardDetails.board?.members.map((m: any) => m._id)}
                                     />
                                 }
@@ -206,7 +205,6 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                         <div key={u._id} title={u.name} className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm relative group/avatar">
                                             {u.name?.trim()[0]?.toUpperCase()}
 
-                                            {/* OPTIONAL: Add a small 'x' to remove a user while editing */}
                                             {activeField === 'assignedTo' && (
                                                 <button
                                                     onClick={() => {
@@ -281,7 +279,10 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-8 mb-4">
+                            {/* Time Management Grid - Now 3 Columns */}
+                            <div className="grid grid-cols-3 gap-6 mb-6">
+
+                                {/* 1. Estimated Goal (Editable) */}
                                 <EditableRow
                                     field="timeGoal" label="Estimated Goal" icon={<Target size={20} className="text-blue-600" />}
                                     activeField={activeField} setActiveField={setActiveField}
@@ -296,26 +297,77 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                         </div>
                                     }
                                 >
-                                    <span className="text-lg font-black text-slate-700">{editedTask.timeManagement?.estimatedTime || 0} <span className="text-xs font-normal text-slate-400 uppercase">hours</span></span>
+                                    <span className="text-lg font-black text-slate-700">
+                                        {editedTask.timeManagement?.estimatedTime || 0}
+                                        <span className="text-xs font-normal text-slate-400 uppercase ml-1">hrs</span>
+                                    </span>
                                 </EditableRow>
 
-                                <div className="flex items-center py-2">
+                                {/* 2. Total Worked (Capped logic applies to the progress bar, but here we show actual) */}
+                                <div className="flex items-center py-2 border-l border-slate-200 pl-6">
                                     <div className="w-8 flex-shrink-0 text-emerald-500 pt-1"><Clock size={20} weight="fill" /></div>
                                     <div className="flex flex-col">
                                         <p className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">Total Worked</p>
                                         <p className="text-lg font-black text-emerald-600">
-                                            {msToHours(editedTask.timeManagement?.totalLoggedTime)} <span className="text-xs font-normal text-slate-400 uppercase">hours</span>
+                                            {msToHours(loggedMs)} <span className="text-xs font-normal text-slate-400 uppercase ml-1">hrs</span>
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* 3. Overtime Delay (Only visible if overtime exists) */}
+                                <div className="flex items-center py-2 border-l border-slate-200 pl-6">
+                                    {overtimeMs > 0 ? (
+                                        <>
+                                            <div className="w-8 flex-shrink-0 text-rose-500 pt-1">
+                                                <WarningCircle size={20} weight="fill" className="animate-pulse" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <p className="text-[10px] font-bold text-rose-400 tracking-wider uppercase">Overtime</p>
+                                                <p className="text-lg font-black text-rose-600">
+                                                    +{delayHours} <span className="text-xs font-normal text-rose-400 uppercase ml-1">hrs</span>
+                                                </p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col opacity-40">
+                                            <p className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">Overtime</p>
+                                            <p className="text-sm font-bold text-gray-400">No Delay</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Goal Progress Bar */}
-                            <div className="space-y-1.5">
-                                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden shadow-inner">
-                                    <div className="bg-blue-500 h-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                                        style={{ width: `${progressPercent}%` }} />
+                            {/* Combined Progress Section */}
+                            <div className="mt-2 space-y-2">
+                                <div className="flex justify-between items-end">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        Task Progress
+                                    </span>
+                                    <span className={`text-[11px] font-bold ${overtimeMs > 0 ? 'text-rose-600' : 'text-blue-600'}`}>
+                                        {overtimeMs > 0 ? 'Goal Exceeded' : `${progressPercent.toFixed(0)}% reached`}
+                                    </span>
                                 </div>
+
+                                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden shadow-inner relative">
+                                    {/* The Actual Progress Bar */}
+                                    <div
+                                        className={`h-full transition-all duration-700 ease-out ${overtimeMs > 0
+                                                ? 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                                                : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
+                                            }`}
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
+
+                                    {/* Optional: Subtle 100% Marker */}
+                                    <div className="absolute right-0 top-0 h-full w-px bg-white/30" />
+                                </div>
+
+                                {/* Small helper text below the bar if in overtime */}
+                                {overtimeMs > 0 && (
+                                    <p className="text-[9px] text-rose-500 font-medium italic animate-pulse">
+                                        * Tracking additional {delayHours} hours beyond estimate
+                                    </p>
+                                )}
                             </div>
 
                             {/* Daily Breakdown List */}

@@ -35,7 +35,7 @@ export const Sidebar = () => {
                 Home
             </NavLink>
             <NavLink to={`/${role}/dashboard/my-tasks`} className={({ isActive }) => `${base} ${isActive ? active : inactive} `}>
-                My tasks
+                {role==='admin' || role==='super-admin' ? "All tasks" : "My Tasks"}
             </NavLink>
             <div className="flex justify-between items-center">
                 <button
