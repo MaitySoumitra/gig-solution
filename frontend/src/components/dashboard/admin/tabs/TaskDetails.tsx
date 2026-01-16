@@ -1,7 +1,7 @@
 import { useContext, useState } from "react"
 import type { Task } from "../../../types/allType"
 import {
-    Pencil, X, Check, Calendar, Tag, User as UserIcon,
+    Pencil, X, Check, Calendar, User as UserIcon,
     ListChecks, Paperclip, Flag, Clock, Target, ChartBar
 } from "@phosphor-icons/react"
 import UserSearchInput from "../../common/UserSearchInput"
@@ -178,22 +178,46 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                             </div>
 
                             <EditableRow
-                                field="assignedTo" label="Assignees" icon={<UserIcon size={20} />}
-                                activeField={activeField} setActiveField={setActiveField}
-                                handleFieldSave={handleFieldSave} handleFieldCancel={handleFieldCancel}
+                                field="assignedTo"
+                                label="Assignees"
+                                icon={<UserIcon size={20} />}
+                                activeField={activeField}
+                                setActiveField={setActiveField}
+                                handleFieldSave={handleFieldSave}
+                                handleFieldCancel={handleFieldCancel}
                                 editComponent={
-                                    <UserSearchInput onUserSelect={(selectedUser) => {
-                                        const current = Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo : [];
-                                        if (!current.some(u => u._id === selectedUser._id)) {
-                                            handleChange('assignedTo', [...current, selectedUser]);
-                                        }
-                                    }} excludeUserIds={Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo.map(u => u._id) : []} />
+                                    <UserSearchInput
+                                        onUserSelect={(selectedUser) => {
+                                            const current = Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo : [];
+                                            if (!current.some(u => u._id === selectedUser._id)) {
+                                                handleChange('assignedTo', [...current, selectedUser]);
+                                            }
+                                        }}
+                                        // 1. Prevents re-adding people already in the task
+                                        excludeUserIds={Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo.map(u => u._id) : []}
+
+                                        // 2. NEW: Restricts search to only existing board members
+                                        includeUserIds={boardDetails.board?.members.map((m: any) => m._id)}
+                                    />
                                 }
                             >
                                 <div className="flex -space-x-2">
                                     {Array.isArray(editedTask.assignedTo) && editedTask.assignedTo.map((u: any) => (
-                                        <div key={u._id} title={u.name} className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm">
+                                        <div key={u._id} title={u.name} className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm relative group/avatar">
                                             {u.name?.trim()[0]?.toUpperCase()}
+
+                                            {/* OPTIONAL: Add a small 'x' to remove a user while editing */}
+                                            {activeField === 'assignedTo' && (
+                                                <button
+                                                    onClick={() => {
+                                                        const filtered = editedTask.assignedTo?.filter((user: any) => user._id !== u._id);
+                                                        handleChange('assignedTo', filtered);
+                                                    }}
+                                                    className="absolute -top-1 -right-1 bg-red-500 rounded-full text-white p-0.5 hover:bg-red-600 shadow-sm"
+                                                >
+                                                    <X size={8} weight="bold" />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                     {(!editedTask.assignedTo || editedTask.assignedTo.length === 0) && <span className="text-sm text-gray-400">Unassigned</span>}

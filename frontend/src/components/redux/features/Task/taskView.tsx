@@ -26,7 +26,7 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
                 columnId,
                 taskData: {
                     ...data,
-                    startDate: data.startDate? new Date(data.startDate):undefined,
+                    startDate: data.startDate ? new Date(data.startDate) : undefined,
                     dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
                 },
             })
@@ -87,7 +87,7 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
                 <option value="High">High</option>
                 <option value="Critical">Critical</option>
             </select>
-           
+
 
             <button
                 type="submit"

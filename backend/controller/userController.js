@@ -86,32 +86,37 @@ const getProfile = (req,res)=>{
 }
 
 const searchUsers = async (req, res) => {
-    // 1. Get the search query from the request, typically via query parameters (?query=...)
-    const { query } = req.query; 
+    // 1. Get query and boardId from request parameters
+    const { query, boardId } = req.query; 
 
     if (!query || query.length < 2) {
-        // Require a minimum length for the search query to prevent massive database lookups
         return res.status(400).json({ message: 'Search query must be at least 2 characters long.' });
     }
 
     try {
-        // 2. Define the search criteria
-        const searchCriteria = {
-            // $or operator allows searching across multiple fields
+        let searchCriteria = {
             $or: [
-                // $regex performs pattern matching for substring search
-                // $options: 'i' makes the search case-insensitive
                 { name: { $regex: query, $options: 'i' } },
                 { email: { $regex: query, $options: 'i' } }
             ]
         };
 
-        // 3. Execute the search
-        const users = await User.find(searchCriteria)
-            .select('_id name email role profilepicture') // Only return necessary fields
-            .limit(10); // Limit results to 10 for performance
+        // 2. If boardId is provided, restrict search to those board members
+        if (boardId) {
+            const board = await Board.findById(boardId);
+            if (!board) {
+                return res.status(404).json({ message: 'Board not found' });
+            }
+            
+            // Add a restriction: the user _id must be in the board.members array
+            searchCriteria._id = { $in: board.members };
+        }
 
-        // 4. Send the found users back to the frontend
+        // 3. Execute the search with restricted criteria
+        const users = await User.find(searchCriteria)
+            .select('_id name email role profilepicture')
+            .limit(10);
+
         res.status(200).json(users);
 
     } catch (error) {

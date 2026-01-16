@@ -276,8 +276,6 @@ const getAllUserTasks = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch all tasks" });
   }
 };
-// Backend Controller
-// Backend Controller: getMyIndividualTasks
 const getMyIndividualTasks = async (req, res) => {
   try {
     // We filter by the logged-in user's ID (from your auth middleware)
