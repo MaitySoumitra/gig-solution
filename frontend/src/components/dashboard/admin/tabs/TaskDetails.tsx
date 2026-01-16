@@ -135,10 +135,10 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
 
                 <TaskDetailsHeader task={task} onClose={onClose} />
 
-                <div className="overflow-y-auto grid md:grid-cols-3 divide-x divide-gray-100">
+                <div className="flex-grow grid md:grid-cols-3 divide-x divide-gray-100 overflow-hidden">
 
                     {/* LEFT & CENTER CONTENT */}
-                    <div className="md:col-span-2 p-6 space-y-8">
+                    <div className="md:col-span-2 p-6 space-y-8 overflow-y-auto h-full scrollbar-thin">
 
                         {/* Title Section */}
                         <div className="space-y-1">
@@ -436,7 +436,7 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                         </div>
 
                     </div>
-                    <div className="bg-gray-50/30">
+                    <div className="bg-gray-50/30 h-full overflow-hidden">
                         <ActivityDetails editedTask={editedTask} />
                     </div>
 
