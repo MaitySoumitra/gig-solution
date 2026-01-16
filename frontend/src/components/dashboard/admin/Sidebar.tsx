@@ -69,7 +69,6 @@ export const Sidebar = () => {
                 </>
             )}
             <button onClick={() => setCreateBoard(!createBoard)} className="text-sm text-gray-400 w-full appearance-none flex justify-center items-center gap-2 p-1 border border-gray-300 border-dotted rounded"><Plus />Create Project</button >
-
         </div>
     )
 }

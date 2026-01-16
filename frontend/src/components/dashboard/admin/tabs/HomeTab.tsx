@@ -76,30 +76,46 @@ export const HomeTab = () => {
     const allTasks = useAppSelector(state => state.task.task) || [];
     const columnsByBoard = useAppSelector(state => state.column.columns);
 
-    useEffect(() => {
-        dispatch(fetchAllTasks());
-        boards.forEach(b => dispatch(fetchColumn(b._id)));
-    }, [dispatch, boards.length]);
+ useEffect(() => {
+    dispatch(fetchAllTasks());
+    // Only dispatch if the board and its _id exist
+    boards.forEach(b => {
+        if (b?._id) {
+            dispatch(fetchColumn(b._id));
+        }
+    });
+}, [dispatch, boards.length]);
 
-    const calculateStats = (boardId: string): Stats => {
-        const boardTasks = allTasks.filter(t => {
-            const id = typeof t.board === 'object' ? (t.board as any)._id : t.board;
-            return String(id) === String(boardId);
-        });
+ const calculateStats = (boardId: string): Stats => {
+    // 1. Safe filter for board tasks
+    const boardTasks = allTasks.filter(t => {
+        if (!t || !t.board) return false; // Guard against null tasks/boards
+        const id = typeof t.board === 'object' ? (t.board as any)?._id : t.board;
+        return String(id) === String(boardId);
+    });
 
-        const boardColumns = columnsByBoard[boardId] || [];
+    const boardColumns = columnsByBoard[boardId] || [];
 
-        const counts = {
-            Todo: boardTasks.filter(t => boardColumns.find(c => c._id === t.column)?.name === "Todo").length,
-            InProgress: boardTasks.filter(t => boardColumns.find(c => c._id === t.column)?.name === "In Progress").length,
-            Completed: boardTasks.filter(t => boardColumns.find(c => c._id === t.column)?.name === "Completed").length,
-            Delay: boardTasks.filter(t => boardColumns.find(c => c._id === t.column)?.name === "Delay").length,
-        };
-
-        const total = boardTasks.length;
-        const percentage = total > 0 ? Math.round((counts.Completed / total) * 100) : 0;
-        return { ...counts, total, percentage };
+    // 2. Safe filter for column counts using Optional Chaining (?.)
+    const counts = {
+        Todo: boardTasks.filter(t => 
+            boardColumns.find(c => c?._id === t?.column)?.name === "Todo"
+        ).length,
+        InProgress: boardTasks.filter(t => 
+            boardColumns.find(c => c?._id === t?.column)?.name === "In Progress"
+        ).length,
+        Completed: boardTasks.filter(t => 
+            boardColumns.find(c => c?._id === t?.column)?.name === "Completed"
+        ).length,
+        Delay: boardTasks.filter(t => 
+            boardColumns.find(c => c?._id === t?.column)?.name === "Delay"
+        ).length,
     };
+
+    const total = boardTasks.length;
+    const percentage = total > 0 ? Math.round((counts.Completed / total) * 100) : 0;
+    return { ...counts, total, percentage };
+};
 
     return (
         <div className="min-h-screen w-full bg-[#f8fafc] p-6 lg:p-10">

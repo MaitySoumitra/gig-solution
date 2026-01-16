@@ -16,10 +16,9 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
     const dispatch = useAppDispatch();
     const boards = useAppSelector(state => state.board.boards);
     
-    // Find the current board to get members
     const currentBoard = boards.find(b => b._id === boardId);
 
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<Task>();
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<Task>();
 
     const onSubmit = (data: Task) => {
         dispatch(addTask({
@@ -27,7 +26,6 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
             columnId,
             taskData: {
                 ...data,
-                // Ensure assignedTo from state is included in the submission
                 assignedTo: editedTask.assignedTo,
                 startDate: data.startDate ? new Date(data.startDate) : undefined,
                 dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
@@ -36,7 +34,7 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
         .unwrap()
         .then(() => {
             reset();
-            setEditedTask({ assignedTo: [] }); // Reset local state
+            setEditedTask({ assignedTo: [] });
         });
     };
 
@@ -44,15 +42,12 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
         setEditedTask(prev => ({ ...prev, [field]: value }));
     };
 
-
     return (
         <form
             onSubmit={handleSubmit(onSubmit)}
             className="bg-white p-4 rounded shadow space-y-3"
         >
             <h3 className="font-bold text-lg">Add Task</h3>
-
-            {/* Title */}
             <div>
                 <input
                     {...register("title", { required: "Title is required" })}
@@ -66,13 +61,11 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
                 )}
             </div>
 
-            {/* Description */}
             <textarea
                 {...register("description")}
                 placeholder="Description"
                 className="w-full border px-3 py-2 rounded"
             />
-
             <div className="flex space-x-2">
                 <input type="date" {...register("startDate")} className="px-3 py-2 rounded border w-full" />
                 <input
@@ -103,7 +96,6 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
                     includeUserIds={currentBoard?.members.map((m: any) => m._id) || []}
                 />
 
-                {/* 2. Visual list of selected users (Avatar Chips) */}
                 <div className="flex flex-wrap gap-2 mt-2">
                     {Array.isArray(editedTask.assignedTo) && editedTask.assignedTo.map((u: any) => (
                         <div key={u._id} className="flex items-center gap-2 bg-slate-100 pl-1 pr-2 py-1 rounded-full border border-slate-200">
@@ -125,8 +117,6 @@ const TaskView: React.FC<Props> = ({ boardId, columnId }) => {
                     ))}
                 </div>
             </div>
-
-
             <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 rounded"
