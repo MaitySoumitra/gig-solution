@@ -347,7 +347,7 @@ const uploadtaskFile = async (req, res) => {
     const newAttachments = req.files.map(file => ({
       _id: new mongoose.Types.ObjectId(),
       fileName: file.originalname,
-      fileUrl: `http://localhost:5000/uploads/${file.filename}`,
+      fileUrl: `https://gig-solution.onrender.com/uploads/${file.filename}`,
       uploadedBy: req.user._id
     }));
 

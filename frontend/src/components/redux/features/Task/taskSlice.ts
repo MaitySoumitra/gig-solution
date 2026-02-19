@@ -236,7 +236,6 @@ const taskSlice = createSlice({
             })
             .addCase(deleteColumn.fulfilled, (state, action) => {
                 const { columnId } = action.payload;
-                // state.task exists here, so the error will disappear
                 state.task = state.task.filter((t) => {
                     const taskColId = typeof t.column === 'object' ? t.column._id : t.column;
                     return taskColId !== columnId;
@@ -257,15 +256,11 @@ const taskSlice = createSlice({
             .addCase(uploadFiles.pending, (state) => {
                 state.loading = "pending";
             })
-            // inside extraReducers for uploadFiles.fulfilled
             .addCase(uploadFiles.fulfilled, (state, action) => {
-                // 1. Update the task in the main list
                 const index = state.task.findIndex(t => t._id === action.payload._id);
                 if (index !== -1) {
                     state.task[index] = action.payload;
                 }
-
-                // 2. Update selectedTask (This keeps the modal open with new data)
                 state.selectedTask = action.payload;
                 state.loading = "fulfilled";
             })

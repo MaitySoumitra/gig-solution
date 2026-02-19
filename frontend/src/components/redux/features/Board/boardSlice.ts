@@ -87,7 +87,7 @@ const boardSlice = createSlice({
             })
             .addCase(createBoard.rejected, (state, action) => {
                 state.loading = "failed",
-                    state.boards = [],
+                    
                     state.error = (action.payload as string)
 
             })
@@ -102,7 +102,7 @@ const boardSlice = createSlice({
             })
             .addCase(fetchBoard.rejected, (state, action) => {
                 state.loading = "failed",
-                    state.boards = [],
+                   
                     state.error = action.payload as string
             })
             // boardSlice.ts extraReducers section
