@@ -186,7 +186,7 @@ const addTaskComment = async (req, res) => {
     // Map files to match your Schema exactly
     const commentAttachments = req.files ? req.files.map(file => ({
       fileName: file.originalname,
-      fileUrl: `http://localhost:5000/uploads/${file.filename}`,
+      fileUrl: `https://gig-solution.onrender.com/uploads/${file.filename}`,
       fileType: file.mimetype, // Matches the new schema field
       uploadedBy: userId
     })) : [];

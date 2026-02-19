@@ -10,7 +10,7 @@ import { addColumn, deleteColumn, fetchColumn } from "../redux/features/Column/c
 import { 
   addComment, 
   getTasks, 
-  clearTasks, 
+
   deleteTask, 
   moveTask, 
   updateTask 
@@ -78,9 +78,6 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  useEffect(() => {
-    dispatch(clearTasks());
-  }, [boardSlug, dispatch]);
 
   const contextValue: BoardProviderProps = useMemo(
     () => ({

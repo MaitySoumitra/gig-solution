@@ -1,28 +1,37 @@
 const Board=require('../models/Board')
 const User =require('../models/User')
 
-const createBoard=async(req, res)=>{
-    const {name, members}=req.body;
-    const ownerId=req.user._id;
-    try{
-        const newBoard= new Board({
+const createBoard = async (req, res) => {
+    const { name, members } = req.body;
+    const ownerId = req.user._id;
+
+    try {
+        const newBoard = new Board({
             name,
             owner: ownerId,
-            members: [ownerId, ...(members ||[])]
-        })
-        await newBoard.save()
+            members: [ownerId, ...(members || [])]
+        });
 
-        await  User.updateMany(
-            {_id:{$in: newBoard.members}},
-            {$addToSet: {memberOfBoards:newBoard._id}}
+        await newBoard.save();
+
+        await User.updateMany(
+            { _id: { $in: newBoard.members } },
+            { $addToSet: { memberOfBoards: newBoard._id } }
         );
-        res.status(201).json(newBoard)
+
+        // 🔥 IMPORTANT: populate before sending response
+        const populatedBoard = await Board.findById(newBoard._id)
+            .populate('owner', 'name email')
+            .populate('members', 'name email role');
+
+        return res.status(201).json(populatedBoard);
+
+    } catch (error) {
+        console.error('Error creating Board', error);
+        res.status(500).json({ message: 'server error: failed to create board' });
     }
-    catch(error){
-        console.error('Error creating Board', error)
-        res.status(500).json({message:'server error: failed to create board'})
-    }
-}
+};
+
 
 const getBoardsForUser= async (req, res)=>{
     try{
