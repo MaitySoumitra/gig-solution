@@ -58,7 +58,7 @@ export const CreateBoardForm = ({ onClose }: CreateBoardFormProps) => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* ================= HEADER ================= */}
       <div className="relative text-center">
-        <h2 className="text-2xl font-bold text-black">Create Board</h2>
+        <h2 className="text-2xl font-bold text-black">Create Project</h2>
         <p className="text-sm text-gray-500 mt-1">
           Organize work and invite team members
         </p>
@@ -145,7 +145,7 @@ export const CreateBoardForm = ({ onClose }: CreateBoardFormProps) => {
     disabled:cursor-not-allowed
   "
       >
-        {isPending ? "Creating..." : "Create Board"}
+        {isPending ? "Creating..." : "Create Project"}
       </button>
     </form>
   );
