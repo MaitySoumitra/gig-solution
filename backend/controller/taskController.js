@@ -193,7 +193,6 @@ const addTaskComment = async (req, res) => {
 
     task._userContext = userId;
 
-    // Push the comment
     task.comments.push({ 
       user: userId, 
       text: text || "", 
@@ -214,9 +213,14 @@ const addTaskComment = async (req, res) => {
 
     // Re-fetch populated task
     const updatedTask = await Task.findById(taskId)
-      .populate('comments.user', 'name email profilePicture')
-      .populate('comments.attachments.uploadedBy', 'name')
-      .populate('activityLog.user', 'name');
+  .populate('assignedTo', 'name email role')
+  .populate('board', 'name')
+  .populate('column', 'name')
+  .populate('comments.user', 'name email profilePicture')
+  .populate('comments.attachments.uploadedBy', 'name')
+  .populate('activityLog.user', 'name')
+  .lean(); // optional, safer for frontend
+
 
     res.status(201).json(updatedTask);
   } catch (error) {
