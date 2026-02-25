@@ -1,4 +1,6 @@
-const Board=require('../models/Board')
+const Board=require('../models/Board');
+const Column = require('../models/Column');
+const Task = require('../models/Task');
 const User =require('../models/User')
 
 const createBoard = async (req, res) => {
@@ -102,8 +104,6 @@ const addMemberToBoard = async (req, res) => {
         });
 
         await board.populate('members', 'name email role');
-
-        // ✅ MISSING return statement in some previous versions
         return res.status(200).json(board);
     } catch (error) {
         console.error("error adding member", error);
@@ -111,6 +111,55 @@ const addMemberToBoard = async (req, res) => {
     }
 };
 
+const deleteBoard=async(req, res)=>{
+    const {boardId}=req.params;
+    try{
+        const board=await Board.findById(boardId)
+        if(!board){
+            return res.status(404).json({meesage: "board not found"})
+        }
 
+        await Task.deleteMany({board: boardId})
+        await Column.deleteMany({board: boardId})
+        await User.updateMany(
+            {memberOfBoards:boardId},
+            {$pull:{memberOfBoards:boardId}}
+        )
+        await board.deleteOne()
+        return res.status(200).json({message:"Board deleted successfully"})
+    }
+    catch(error){
+        return res.status(500).json({message:"server eroor during deleting process"})
+    }
+}
 
-module.exports={createBoard, getBoardsForUser, getBoardById, addMemberToBoard}
+const editBoard=async(req, res)=>{
+    const {boardId}=req.params;
+    const {name}=req.body;
+    if(!name || name.trim()===""){
+        return res.status(403).json({message: "board name is not found"})
+    }
+    try{
+        const board=await Board.findById(boardId)
+        if(!board){
+            return res.status(404).json({message: "board is not found"})
+        }
+        if(board.owner.toString()!== req.user._id.toString()){
+            return res.status(400).json({message: "only owner can edit the board"})
+        }
+        board.name=name
+        await board.save()
+
+        const populatedBoard=await Board.findById(board._id)
+        .populate('owner', 'name email')
+        .populate('members', 'name email role')
+        .populate('columns', 'name')
+        return res.status(200).json(populatedBoard)
+
+    }
+    catch(error){
+        return res.status(500).json({message: "Internal server error"})
+    }
+}
+
+module.exports={createBoard, getBoardsForUser, getBoardById, addMemberToBoard, deleteBoard, editBoard}

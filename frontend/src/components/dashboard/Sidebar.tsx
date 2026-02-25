@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAppDispatch, useAppSelector } from "../redux/app/hook"
 import { useEffect, useState } from "react"
-import { fetchBoard } from "../redux/features/Board/boardSlice"
+import { deleteBoard, editBoard, fetchBoard } from "../redux/features/Board/boardSlice"
 import { slugify } from '../hooks/slugify'
 import {
     House,
@@ -13,6 +13,7 @@ import {
     CaretRight,
     UserCirclePlus,
     ListChecks,
+    DotsThreeVerticalIcon,
 } from "@phosphor-icons/react";
 import { logoutUser } from "../redux/features/User/login/loginSlice";
 import { CreateBoardForm } from "../redux/features/Board/CreateBoardForm"
@@ -25,6 +26,10 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
     const [showBoard, setShowBoard] = useState<boolean>(false);
     const [createBoard, setCreateBoard] = useState<boolean>(false)
     const [showAddUser, setShowAddUser] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState<any>(null)
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+    const [boardToEdit, setBoardToEdit] = useState<any>(null)
+    const [editName, setEditName] = useState<string>("")
 
     const navigate = useNavigate()
     const baseRow =
@@ -41,6 +46,33 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
     useEffect(() => {
         dispatch(fetchBoard())
     }, [dispatch])
+
+    const handleDelete = async (boardId: string) => {
+        try {
+            await dispatch(deleteBoard({ boardId })).unwrap();
+
+            setTaskToDelete(null);
+
+            alert("Task deleted successfully"); // replace with toast later
+        } catch (error) {
+            console.error("Delete failed", error);
+        }
+    };
+    const handleEditSubmit = async () => {
+        if (!editName.trim()) return;
+        try {
+            await dispatch(editBoard({
+                boardId: boardToEdit._id,
+                name: editName
+            })).unwrap();
+
+            setBoardToEdit(null); // Close modal
+            setEditName(""); // Clear input
+            alert("Board updated successfully");
+        } catch (error) {
+            console.error("Edit failed", error);
+        }
+    };
 
 
 
@@ -124,19 +156,63 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
                     {showBoard && !collapsed && (
                         <div className="ml-8 space-y-1">
                             {board.map(b => {
+                                const isMenuOpen = openMenuId === b._id
                                 return (
-                                    <NavLink
-                                        key={b._id}
-                                        to={`${dashboardBase}/${slugify(b.name)}`}
-                                        className={({ isActive }) =>
-                                            `block h-9 px-3 text-xs rounded-md flex items-center ${isActive
-                                                ? "bg-black text-white"
-                                                : "hover:bg-black hover:text-white"
-                                            }`
-                                        }
-                                    >
-                                        {b.name}
-                                    </NavLink>
+                                    <div key={b._id} className="relative group">
+                                        <NavLink
+
+                                            to={`${dashboardBase}/${slugify(b.name)}`}
+                                            className={({ isActive }) =>
+                                                `block h-9 px-3 text-xs rounded-md flex items-center justify-between ${isActive
+                                                    ? "bg-gray-400 text-white"
+                                                    : "hover:bg-gray-400 hover:text-white"
+                                                }`
+                                            }
+                                        >
+                                            {role === 'admin' || role === 'super-admin' ? (<>{b.name} <button onClick={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                setOpenMenuId(isMenuOpen ? null : b._id)
+                                            }}
+                                                className='rounded-full hover:bg-white hover:text-black p-[5px]'
+                                            >
+                                                <DotsThreeVerticalIcon className="text-black" />
+                                            </button></>) : (<>{b.name}</>)}
+                                        </NavLink>
+                                        {isMenuOpen && (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-10"
+                                                    onClick={() => setOpenMenuId(null)}
+                                                />
+                                                <div className="absolute right-0 top-9 w-28 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1 overflow-hidden">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setBoardToEdit(b); // Set the board object
+                                                            setEditName(b.name); // Pre-fill the input with current name
+                                                            setOpenMenuId(null); // Close the dropdown menu
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTaskToDelete(b); // Opens your existing delete modal
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                    >
+                                                        Delete
+                                                    </button>
+
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
                                 )
                             })}
                         </div>
@@ -204,6 +280,78 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
 
             {showAddUser && (
                 <AddUserModal onClose={() => setShowAddUser(false)} />
+            )}
+            {taskToDelete && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-96 shadow-lg">
+                        <h2 className="text-lg font-bold text-gray-800 mb-3">
+                            Confirm Delete
+                        </h2>
+
+                        <p className="text-sm text-gray-600 mb-6">
+                            Are you sure you want to delete
+                            <span className="font-semibold text-red-600">
+                                {" "}{taskToDelete.title}
+                            </span>
+                            ?
+                        </p>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setTaskToDelete(null)}
+                                className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={() => handleDelete(taskToDelete._id)}
+                                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* EDIT BOARD MODAL */}
+            {boardToEdit && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-96 shadow-lg" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-lg font-bold text-gray-800 mb-3">
+                            Edit Board Name
+                        </h2>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Board Name</label>
+                            <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setBoardToEdit(null)}
+                                className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleEditSubmit}
+                                disabled={!editName.trim()}
+                                className="px-4 py-2 text-sm rounded-lg bg-black text-white hover:bg-gray-800 disabled:bg-gray-300"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     )

@@ -22,25 +22,7 @@ const protect= async (req, res, next)=>{
         return res.status(401).json({ message: 'Not authorized, token failed or expired' });
     }
 }
-const admin = (req, res, next)=>{
-    if(req.user && req.user.role ==='admin'){
-        next();
-    }
-    else{
-        res.status(403).json({message: "Access Denied: Admin role required"})
-    }
-}
 
-const superAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'super-admin') {
-         console.log("User in hasAdminPrivileges:", req.user);
-        next();
-       
-
-    } else {
-        res.status(403).json({ message: "Access denied: Super Admin role required" });
-    }
-};
 
 // 2. hasAdminPrivileges: Allows EITHER 'super-admin' OR 'admin'. (For shared routes like board creation)
 const hasAdminPrivileges = (req, res, next) => {
@@ -55,4 +37,4 @@ const hasAdminPrivileges = (req, res, next) => {
 
 // NOTE: The original 'admin' middleware remains valid for routes only admins can access.
 // You will export all of these.
-module.exports = { protect, admin, superAdmin, hasAdminPrivileges };
+module.exports = { protect,  hasAdminPrivileges };

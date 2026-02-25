@@ -70,6 +70,30 @@ export const fetchBoardById = createAsyncThunk<Board, string, { rejectValue: str
     }
 );
 
+export const deleteBoard=createAsyncThunk("board/deleteBoard", async({boardId}:{boardId: string}, {rejectWithValue})=>{
+    try{
+        await axiosClient.delete(`/api/boards/${boardId}`, {withCredentials: true})
+        return {boardId}
+    }
+    catch(error: any){
+        return rejectWithValue( error.response?.message?.data || error.message)
+
+    }
+})
+
+export const editBoard=createAsyncThunk< Board,{boardId: string, name: string}, {rejectValue: string}>("board/editBoard",
+    async({boardId, name},{rejectWithValue})=>{
+        try{
+            const res=await axiosClient.put(`/api/boards/${boardId}`, {name}, {withCredentials: true})
+            return res.data as Board
+        }
+        catch(error: any){
+        return rejectWithValue( error.response?.message?.data || error.message)
+
+    }
+    }
+)
+
 const boardSlice = createSlice({
     name: "baord",
     initialState: initialBoardState,
@@ -129,7 +153,26 @@ const boardSlice = createSlice({
                 } else {
                     state.boards.push(action.payload);
                 }
-            });
+            })
+            .addCase(deleteBoard.pending,(state)=>{
+                state.loading="pending"
+            })
+            .addCase(deleteBoard.fulfilled,(state, action)=>{
+                state.loading="succeeded"
+                state.boards=state.boards.filter(board=>board._id!==action.payload.boardId)
+            })
+            .addCase(deleteBoard.rejected, (state, action)=>{
+                state.loading="failed"
+                state.error=action.payload as string
+            })
+            .addCase(editBoard.fulfilled, (state,action)=>{
+                state.loading="succeeded"
+                const index=state.boards.findIndex(b=>b._id===action.payload._id)
+                if(index===-1){
+                    state.boards[index]=action.payload
+                }
+            })
+            
 
     }
 })
