@@ -18,6 +18,7 @@ import {
 import { logoutUser } from "../redux/features/User/login/loginSlice";
 import { CreateBoardForm } from "../redux/features/Board/CreateBoardForm"
 import AddUserModal from "../redux/features/User/AddUserModal"
+import { DeleteBoardModal } from "../modal/DeleteModal"
 interface SidebarProps {
     collapsed: boolean;
     setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
@@ -281,37 +282,11 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
                 <AddUserModal onClose={() => setShowAddUser(false)} />
             )}
             {taskToDelete && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 w-96 shadow-lg">
-                        <h2 className="text-lg font-bold text-gray-800 mb-3">
-                            Confirm Delete
-                        </h2>
-
-                        <p className="text-sm text-gray-600 mb-6">
-                            Are you sure you want to delete
-                            <span className="font-semibold text-red-600">
-                                {" "}{taskToDelete.title}
-                            </span>
-                            ?
-                        </p>
-
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setTaskToDelete(null)}
-                                className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={() => handleDelete(taskToDelete._id)}
-                                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <DeleteBoardModal
+                board={taskToDelete}
+                onCancel={()=>setTaskToDelete(null)}
+                onConfirm={handleDelete}
+                />
             )}
             {boardToEdit && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

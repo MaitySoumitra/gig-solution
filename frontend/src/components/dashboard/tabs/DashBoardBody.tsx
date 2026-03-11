@@ -15,6 +15,7 @@ import { useAppSelector } from "../../redux/app/hook";
 import { BoardContext } from "../../context/BoardContext";
 import { getColumnColor } from "../../utils/columnColors";
 import { getAvatarColor } from "../../utils/avatarColor";
+import { DeleteBoardModal } from "../../modal/DeleteModal";
 
 export const DashBoardBody = () => {
   const [showColumnInput, setShowColumnInput] = useState(false);
@@ -22,6 +23,7 @@ export const DashBoardBody = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [openMenuColumn, setOpenMenuColumn] = useState<string | null>(null);
   const [popupColumnId, setPopupColumnId] = useState<string | null>(null);
+  const [columnToDelete, setColumnToDelete] = useState<Column | null>(null);
 
   const columnMenuRef = useRef<HTMLDivElement | null>(null);
   const columnInputRef = useRef<HTMLDivElement | null>(null);
@@ -133,12 +135,13 @@ export const DashBoardBody = () => {
                         <button
                           className="w-full text-left px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
                           onClick={() => {
-                            deleteColumn(c._id);
+                            setColumnToDelete(c);
                             setOpenMenuColumn(null);
                           }}
                         >
                           Delete Column
                         </button>
+
                       </div>
                     )}
                   </div>
@@ -360,7 +363,16 @@ export const DashBoardBody = () => {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
         />
+
       )}
+      <DeleteBoardModal
+        board={columnToDelete}
+        onCancel={() => setColumnToDelete(null)}
+        onConfirm={(id) => {
+          deleteColumn(id);
+          setColumnToDelete(null);
+        }}
+      />
     </div>
   );
 };
