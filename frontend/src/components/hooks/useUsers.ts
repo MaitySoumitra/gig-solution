@@ -1,14 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosClient from '../api/axiosClient';
-
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  phone?: string;
-  createdAt: string;
-}
+import type{ User } from '../types/allType';
 
 interface UsersResponse {
   total: number;

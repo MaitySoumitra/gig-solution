@@ -51,16 +51,25 @@ export const addTask = createAsyncThunk<Task, { boardId: string, columnId: strin
         return rejectWithValue(err.response?.data?.message || err.message)
     }
 })
-
-export const moveTask = createAsyncThunk<{ taskId: string, newColumnId: string, newPosition: number }, { taskId: string, newColumnId: string, newPosition: number }, { rejectValue: string }>("task/moveTask", async ({ taskId, newColumnId, newPosition }, { rejectWithValue }) => {
-    try {
-        await axiosClient.patch(`/api/tasks/${taskId}/move`, { newColumnId, newPosition }, { withCredentials: true })
-        return { taskId, newColumnId, newPosition }
+export const moveTask = createAsyncThunk<
+    Task, // full Task object
+    { taskId: string; newColumnId: string; newPosition: number },
+    { rejectValue: string }
+>(
+    "task/moveTask",
+    async ({ taskId, newColumnId, newPosition }, { rejectWithValue }) => {
+        try {
+            const res = await axiosClient.patch(
+                `/api/tasks/${taskId}/move`,
+                { newColumnId, newPosition },
+                { withCredentials: true }
+            );
+            return res.data; // <-- full Task object
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || err.message);
+        }
     }
-    catch (err: any) {
-        return rejectWithValue(err.response?.data?.message || err.message)
-    }
-})
+);
 
 export const updateTask = createAsyncThunk<Task, { taskId: string, update: Partial<Task> }, { rejectValue: string }>("task/updateTask", async ({ taskId, update }, { rejectWithValue }) => {
     try {
@@ -162,9 +171,21 @@ const taskSlice = createSlice({
 
                     taskToMove.position = newPosition;
                 }
-
             })
-            .addCase(moveTask.fulfilled, (state) => { state.loading = "fulfilled"; })
+            .addCase(moveTask.fulfilled, (state, action: PayloadAction<Task>) => {
+                state.loading = "fulfilled";
+
+                const index = state.task.findIndex(t => t._id === action.payload._id);
+
+                if (index !== -1) {
+                    state.task[index] = action.payload; // fully replace with server version
+                }
+
+                // Update selectedTask if it's the same task
+                if (state.selectedTask?._id === action.payload._id) {
+                    state.selectedTask = action.payload;
+                }
+            })
             .addCase(moveTask.rejected, (state, action) => { state.loading = "failed"; state.error = action.payload as string; })
             .addCase(updateTask.pending, (state) => { state.loading = "pending"; })
             .addCase(updateTask.fulfilled, (state, action) => {
@@ -186,12 +207,12 @@ const taskSlice = createSlice({
                 state.task = state.task.filter(t => t._id !== (action.payload as any).taskId);
             })
             .addCase(deleteTask.rejected, (state) => { state.loading = "failed"; })
-            .addCase(addComment.pending, (state) => { 
-                state.loading = "pending"; 
+            .addCase(addComment.pending, (state) => {
+                state.loading = "pending";
             })
             .addCase(addComment.fulfilled, (state, action) => {
                 state.loading = "fulfilled";
-                
+
                 // Update the task in the main array
                 const index = state.task.findIndex(t => t._id === action.payload._id);
                 if (index !== -1) {
@@ -204,8 +225,8 @@ const taskSlice = createSlice({
                 // IMPORTANT: Update selectedTask so the comment appears in the modal instantly
                 state.selectedTask = action.payload;
             })
-            .addCase(addComment.rejected, (state, action) => { 
-                state.loading = "failed"; 
+            .addCase(addComment.rejected, (state, action) => {
+                state.loading = "failed";
                 state.error = action.payload as string;
             })
             .addCase(toggleTimer.pending, (state) => {

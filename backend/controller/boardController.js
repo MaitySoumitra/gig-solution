@@ -13,7 +13,7 @@ const createBoard = async (req, res) => {
             owner: ownerId,
             members: [ownerId, ...(members || [])]
         });
-
+newBoard._userContext = ownerId;
         await newBoard.save();
 
         await User.updateMany(
@@ -92,13 +92,20 @@ const addMemberToBoard = async (req, res) => {
         const board = await Board.findById(boardId);
         if (!board) return res.status(404).json({ message: "Board not found" });
 
+        // 1. Set the context (Same as you do for Tasks)
+        board._userContext = req.user._id; 
+
         if (board.members.includes(memberId)) {
             return res.status(400).json({ message: "User already a member" });
         }
 
+        // 2. Add member and Save
         board.members.push(memberId);
-        await board.save();
+        
+        // This save() call now triggers the post('save') hook we wrote above!
+        await board.save(); 
 
+        // 3. Update User document
         await User.findByIdAndUpdate(memberId, {
             $addToSet: { memberOfBoards: board._id }
         });
@@ -106,8 +113,8 @@ const addMemberToBoard = async (req, res) => {
         await board.populate('members', 'name email role');
         return res.status(200).json(board);
     } catch (error) {
-        console.error("error adding member", error);
-        res.status(500).json({ message: "Server error: could not add member" });
+        console.error("Error adding member:", error);
+        res.status(500).json({ message: "Server error" });
     }
 };
 

@@ -73,19 +73,26 @@ export const TaskDetailsHeader = ({ task, onClose }: TaskDetailsHeaderProps) => 
                                     <DotsThree size={20} weight="bold" />
                                 </button>
                                 
-                                {openTaskId === task._id && deleteTask && (
-                                    <div className='absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50'>
-                                        <button
-                                            className='w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50'
-                                            onClick={() => {
-                                                deleteTask(task._id);
-                                                setOpenTaskId(null);
-                                            }}
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                )}
+                                {/* ... inside the dropdown logic ... */}
+{openTaskId === task._id && deleteTask && (
+    <div className='absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50'>
+        <button
+            className='w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50'
+            onClick={() => {
+                // 1. Trigger the delete action from Context
+                deleteTask(task._id);
+                
+                // 2. Close the dropdown state
+                setOpenTaskId(null);
+                
+                // 3. IMPORTANT: Close the TaskDetails modal itself
+                onClose(); 
+            }}
+        >
+            Delete
+        </button>
+    </div>
+)}
                             </div>
                             
                             {/* Actions that don't strictly require context */}

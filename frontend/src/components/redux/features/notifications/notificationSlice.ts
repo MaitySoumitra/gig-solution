@@ -3,11 +3,12 @@ import axiosClient from "../../../api/axiosClient";
 
 interface Notification {
     _id: string;
-    recipient: string;
+    board: { _id: string; name: string; }; // Or just 'board: string;' if you only have the ID
     sender: { _id: string; name: string; email: string };
     task: { _id: string; title: string };
     action: string;
     isRead: boolean;
+    readBy: string[]; 
     createdAt: string;
 }
 
@@ -16,6 +17,7 @@ interface NotificationState {
     unreadCount: number;
     loading: "idle" | "pending" | "fulfilled" | "failed";
     error: string | null;
+    currentUserId: string
 }
 
 const initialState: NotificationState = {
@@ -23,6 +25,7 @@ const initialState: NotificationState = {
     unreadCount: 0,
     loading: "idle",
     error: null,
+    currentUserId:""
 };
 
 // 1. Fetch all notifications
@@ -78,10 +81,17 @@ const notificationSlice = createSlice({
                 state.loading = "pending";
             })
             .addCase(fetchNotifications.fulfilled, (state, action) => {
-                state.loading = "fulfilled";
-                state.notifications = action.payload;
-                state.unreadCount = action.payload.filter((n) => !n.isRead).length;
-            })
+    state.loading = "fulfilled";
+    state.notifications = action.payload;
+
+    // 💡 Update unread calculation based on user presence in readBy array
+    // You need the current user ID here, which might be tricky in the slice.
+    // A better approach is to calculate this in the component, or 
+    // send the user ID in the action payload.
+    state.unreadCount = action.payload.filter((n) => 
+        !n.readBy.includes(state.currentUserId) // Assuming you store currentUserId in state
+    ).length;
+})
             .addCase(fetchNotifications.rejected, (state, action) => {
                 state.loading = "failed";
                 state.error = action.payload as string;

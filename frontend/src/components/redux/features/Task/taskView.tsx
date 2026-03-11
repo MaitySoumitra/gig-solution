@@ -56,6 +56,8 @@ const TaskView: React.FC<Props> = ({ boardId, columnId, onClose }) => {
   const handleChange = (field: keyof Task, value: any) => {
     setEditedTask((prev) => ({ ...prev, [field]: value }));
   };
+
+  const today=new Date().toISOString().split("T")[0]
  
   return (
     <div
@@ -109,12 +111,16 @@ const TaskView: React.FC<Props> = ({ boardId, columnId, onClose }) => {
           <div className="flex gap-3">
             <input
               type="date"
-              {...register("startDate")}
+              min={today}
+              defaultValue={today}
+              {...register("startDate", {required: "Start Date is required"})}
               className="w-full px-4 py-3 rounded-full border border-gray-300"
             />
             <input
               type="date"
-              {...register("dueDate")}
+              min={today}
+              defaultValue={today}
+              {...register("dueDate", {required:"Due date is required"})}
               className="w-full px-4 py-3 rounded-full border border-gray-300"
             />
           </div>

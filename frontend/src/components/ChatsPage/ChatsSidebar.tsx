@@ -13,76 +13,80 @@ import SearchUserModal from "./SearchUserModal";
 import { ChatsCircle, Plus } from "@phosphor-icons/react";
 import { getAvatarColor } from "../utils/avatarColor";
 import { useOnlineUsers } from "../hooks/useOnlineUsers";
- 
+
 // 🟢 STATUS FEATURE
 import StatusPicker from "./StatusPicker";
-import { STATUS_META, type UserStatus } from "../utils/userStatus";
+import { STATUS_META, } from "../utils/userStatus";
 import { socket } from "../services/socket";
- 
+import type { UserStatus } from "../types/allType";
 export default function ChatsSidebar() {
   const dispatch = useDispatch();
   const currentUser = useCurrentUser();
   const onlineUsers = useOnlineUsers();
- 
-  const activeChat = useSelector(
-    (state: RootState) => state.chat.activeChat
-  );
- 
+
+  const activeChat = useSelector((state: RootState) => state.chat.activeChat);
+
   const { data: requests } = useGetIncomingRequestsQuery();
   const { data: chats } = useGetMyChatsQuery();
- 
+
   const [acceptRequest] = useAcceptChatRequestMutation();
   const [markSeen] = useMarkSeenMutation();
   const [showSearch, setShowSearch] = useState(false);
- 
+
   /* ================= STATUS STATE ================= */
   const [showStatus, setShowStatus] = useState(false);
   const [myStatus, setMyStatus] = useState<UserStatus>(null);
-  const [userStatuses, setUserStatuses] = useState<
-    Record<string, UserStatus>
-  >({});
- 
+  const [userStatuses, setUserStatuses] = useState<Record<string, UserStatus>>(
+    {},
+  );
+
   /* ================= SOCKET STATUS SYNC ================= */
-  useEffect(() => {
-    socket.on("all-status", (list: any[]) => {
-      const map: Record<string, UserStatus> = {};
-      list.forEach(({ userId, status }) => {
-        map[userId] = status;
-      });
-      setUserStatuses(map);
- 
-      if (currentUser?._id && map[currentUser._id]) {
-        setMyStatus(map[currentUser._id]);
-      }
+useEffect(() => {
+
+  socket.emit("get-all-status"); // 🔥 add this
+
+  socket.on("all-status", (list: any[]) => {
+    const map: Record<string, UserStatus> = {};
+
+    list.forEach(({ userId, status }) => {
+      map[userId] = status;
     });
- 
-    socket.on("status-updated", ({ userId, status }) => {
-      setUserStatuses((prev) => ({
-        ...prev,
-        [userId]: status,
-      }));
- 
-      if (userId === currentUser?._id) {
-        setMyStatus(status);
-      }
-    });
- 
-    return () => {
-      socket.off("all-status");
-      socket.off("status-updated");
-    };
-  }, [currentUser?._id]);
- 
+
+    setUserStatuses(map);
+
+    if (currentUser?._id && map[currentUser._id]) {
+      setMyStatus(map[currentUser._id]);
+    }
+  });
+
+  socket.on("status-updated", ({ userId, status }) => {
+    setUserStatuses((prev) => ({
+      ...prev,
+      [userId]: status,
+    }));
+
+    if (userId === currentUser?._id) {
+      setMyStatus(status);
+    }
+  });
+
+  return () => {
+    socket.off("all-status");
+    socket.off("status-updated");
+  };
+
+}, [currentUser?._id]);
+
   const updateStatus = (status: UserStatus) => {
     if (!currentUser?._id) return;
- 
+
     setMyStatus(status);
     socket.emit("set-status", {
       userId: currentUser._id,
       status,
     });
   };
- 
+
   if (!currentUser) {
     return (
       <aside className="w-80 bg-black text-gray-400 flex items-center justify-center">
@@ -90,24 +94,22 @@ export default function ChatsSidebar() {
       </aside>
     );
   }
- 
+
   /* ================= UNIQUE CHAT LIST ================= */
   const uniqueChats = useMemo(() => {
     if (!chats) return [];
- 
+
     const map = new Map<string, any>();
     chats.forEach((chat) => {
-      const other = chat.members.find(
-        (m: any) => m._id !== currentUser._id
-      );
+      const other = chat.members.find((m: any) => m._id !== currentUser._id);
       if (other && !map.has(other._id)) {
         map.set(other._id, chat);
       }
     });
- 
+
     return Array.from(map.values());
   }, [chats, currentUser._id]);
- 
+
   return (
     <aside className="w-80 bg-black text-white flex flex-col relative">
       {/* ===== HEADER ===== */}
@@ -116,7 +118,7 @@ export default function ChatsSidebar() {
           <ChatsCircle size={22} weight="fill" />
           <h2 className="font-bold">ASC Conversation</h2>
         </div>
- 
+
         <button
           onClick={() => setShowSearch(true)}
           className="h-8 w-8 rounded-full bg-white text-black flex items-center justify-center"
@@ -124,13 +126,13 @@ export default function ChatsSidebar() {
           <Plus size={16} weight="bold" />
         </button>
       </div>
- 
+
       {/* ===== REQUESTS ===== */}
       {requests && requests.length > 0 && (
         <div className="px-2 py-2 border-b border-gray-800">
           {requests.map((r) => {
             const avatarColor = getAvatarColor(r.from.name);
- 
+
             return (
               <div
                 key={r._id}
@@ -143,17 +145,15 @@ export default function ChatsSidebar() {
                   >
                     {r.from.name.charAt(0).toUpperCase()}
                   </div>
- 
+
                   <div className="leading-tight">
                     <p className="text-sm font-medium">{r.from.name}</p>
                     <p className="text-xs text-gray-400">{r.from.email}</p>
                   </div>
                 </div>
- 
+
                 <button
-                  onClick={() =>
-                    acceptRequest({ requestId: r._id })
-                  }
+                  onClick={() => acceptRequest({ requestId: r._id })}
                   className="bg-white text-black text-xs px-3 py-1 rounded-full"
                 >
                   Accept
@@ -163,24 +163,22 @@ export default function ChatsSidebar() {
           })}
         </div>
       )}
- 
+
       {/* ===== CHAT LIST ===== */}
       <div className="flex-1 overflow-y-auto">
         {uniqueChats.map((chat) => {
           const other = chat.members.find(
-            (m: any) => m._id !== currentUser._id
+            (m: any) => m._id !== currentUser._id,
           );
           if (!other) return null;
- 
+
           const avatarColor = getAvatarColor(other.name);
           const isOnline = onlineUsers.includes(other._id);
           const unreadCount =
-            chat.unreadCount ??
-            chat.unreadCountMap?.[currentUser._id] ??
-            0;
- 
+            chat.unreadCount ?? chat.unreadCountMap?.[currentUser._id] ?? 0;
+
           const userStatus = userStatuses[other._id];
- 
+
           return (
             <div
               key={chat._id}
@@ -200,37 +198,54 @@ export default function ChatsSidebar() {
                 style={{ backgroundColor: avatarColor }}
               >
                 {other.name.charAt(0).toUpperCase()}
- 
+
                 {isOnline && (
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black" />
                 )}
               </div>
- 
+
               {/* NAME + EMAIL + STATUS */}
               <div className="flex items-center flex-1 justify-between min-w-0">
                 <div className="leading-tight min-w-0">
-                  <p className="text-sm font-semibold truncate">
-                    {other.name}
-                  </p>
+                  <p className="text-sm font-semibold truncate">{other.name}</p>
                   <p className="text-xs text-gray-400 truncate">
                     {other.email}
                   </p>
                 </div>
- 
-                {userStatus && (
-                  <div
-                    className="ml-3 flex-shrink-0 text-[20px] drop-shadow select-none"
-                    title={STATUS_META[userStatus].label}
-                  >
-                    {STATUS_META[userStatus].emoji}
-                  </div>
-                )}
+
+{userStatus &&
+  (() => {
+    const Icon = STATUS_META[userStatus].icon;
+    const gradientId = `icon-gradient-${chat._id}`;
+
+    return (
+      <div
+        className="ml-3 flex-shrink-0"
+        title={STATUS_META[userStatus].label}
+      >
+        <svg width="18" height="18">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="12%" x2="100%" y2="36%">
+              <stop offset="50%" stopColor="#e69200" />
+              <stop offset="100%" stopColor="#f9d056" />
+            </linearGradient>
+          </defs>
+
+          <Icon
+            size={18}
+            weight="fill"
+            style={{ fill: `url(#${gradientId})` }}
+          />
+        </svg>
+      </div>
+    );
+  })()}
               </div>
             </div>
           );
         })}
       </div>
- 
+
       {/* ===== CURRENT USER ===== */}
       <div
         className="border-t border-gray-800 p-4 flex items-center gap-3 cursor-pointer"
@@ -242,28 +257,45 @@ export default function ChatsSidebar() {
         >
           {currentUser.name.charAt(0).toUpperCase()}
         </div>
- 
+
         <div className="flex-1 flex items-center justify-between min-w-0">
           <div className="leading-tight min-w-0">
-            <p className="text-sm font-semibold truncate">
-              {currentUser.name}
-            </p>
+            <p className="text-sm font-semibold truncate">{currentUser.name}</p>
             <p className="text-xs text-gray-400 truncate">
               {currentUser.email}
             </p>
           </div>
- 
-          {myStatus && (
-            <div
-              className="ml-3 text-[20px] drop-shadow select-none"
-              title={STATUS_META[myStatus].label}
-            >
-              {STATUS_META[myStatus].emoji}
-            </div>
-          )}
+
+{myStatus &&
+  (() => {
+    const Icon = STATUS_META[myStatus].icon;
+    const gradientId = `icon-gradient-self`;
+
+    return (
+      <div
+        className="ml-3"
+        title={STATUS_META[myStatus].label}
+      >
+        <svg width="18" height="18">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="12%" x2="100%" y2="36%">
+              <stop offset="50%" stopColor="#e69200" />
+              <stop offset="100%" stopColor="#f9d056" />
+            </linearGradient>
+          </defs>
+
+          <Icon
+            size={18}
+            weight="fill"
+            style={{ fill: `url(#${gradientId})` }}
+          />
+        </svg>
+      </div>
+    );
+  })()}
         </div>
       </div>
- 
+
       {/* ===== STATUS PICKER ===== */}
       {showStatus && (
         <StatusPicker
@@ -274,12 +306,8 @@ export default function ChatsSidebar() {
           onClose={() => setShowStatus(false)}
         />
       )}
- 
-      {showSearch && (
-        <SearchUserModal onClose={() => setShowSearch(false)} />
-      )}
+
+      {showSearch && <SearchUserModal onClose={() => setShowSearch(false)} />}
     </aside>
   );
 }
- 
- 

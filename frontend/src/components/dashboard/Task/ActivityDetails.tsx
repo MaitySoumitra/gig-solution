@@ -1,11 +1,10 @@
-import {  Paperclip, PaperPlaneRight, CaretDown, CaretUp, XCircle, File } from "@phosphor-icons/react";
-import { useContext, useState, useRef } from "react";
+import { Paperclip, PaperPlaneRight, CaretDown, CaretUp, XCircle, File } from "@phosphor-icons/react";
+import { useContext, useState, useRef, useMemo, memo } from "react";
 import { BoardContext } from "../../context/BoardContext";
-import type { Task } from "../../types/allType";
 import { useAppSelector } from "../../redux/app/hook";
 
 interface ActivityDetailsProps {
-    editedTask: Partial<Task>;
+    taskId: string | undefined; // Pass only the ID to prevent typing lag
 }
 
 const getRelativeTime = (date: string | Date) => {
@@ -19,7 +18,7 @@ const getRelativeTime = (date: string | Date) => {
     return new Date(date).toLocaleDateString();
 };
 
-export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
+export const ActivityDetails = memo(({ taskId }: ActivityDetailsProps) => {
     const [commentText, setCommentText] = useState("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [showAllActivity, setShowAllActivity] = useState(false);
@@ -27,7 +26,12 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
     
     const fileInputRef = useRef<HTMLInputElement>(null);
     const boardDetails = useContext(BoardContext);
-    const addComment = boardDetails?.addComment; // Ensure this now accepts (taskId, formData)
+    
+    // 1. Get the "Real" task data from Context (which comes from Redux)
+    // This data does NOT change when you type in the Edit Title/Description inputs
+    const taskData = useMemo(() => {
+        return boardDetails?.task.find(t => t._id === taskId);
+    }, [boardDetails?.task, taskId]);
 
     const user = useAppSelector(state => state.login.user);
 
@@ -42,29 +46,36 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
     };
 
     const handleSendComment = async () => {
-        if ((!commentText.trim() && selectedFiles.length === 0) || !editedTask._id) return;
+        if ((!commentText.trim() && selectedFiles.length === 0) || !taskId) return;
 
         const formData = new FormData();
         formData.append("text", commentText);
         selectedFiles.forEach(file => {
-            formData.append("files", file); // Must match backend upload.array('files')
+            formData.append("files", file);
         });
 
-        // @ts-ignore - Update your Context Type to expect FormData for addComment
-        await addComment?.(editedTask._id, formData);
+        await boardDetails?.addComment?.(taskId, formData);
         
         setCommentText("");
         setSelectedFiles([]);
     };
 
-    const activities = [...(editedTask.activityLog || [])].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
-    const comments = [...(editedTask.comments || [])].sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // 2. Memoize sorting logic so it doesn't run on every small UI change
+   // Inside ActivityDetails.tsx
+
+const activities = useMemo(() => {
+    // Just return the array as is (newest will be at the end)
+    return taskData?.activityLog || [];
+}, [taskData?.activityLog]);
+
+const comments = useMemo(() => {
+    return taskData?.comments || [];
+}, [taskData?.comments]);
 
     const displayedActivities = showAllActivity ? activities : activities.slice(0, 3);
     const displayedComments = showAllComments ? comments : comments.slice(0, 3);
+
+    if (!taskData) return null;
 
     return (
         <div className="bg-white border-l border-gray-200 shadow-sm flex flex-col h-full overflow-hidden">
@@ -86,7 +97,7 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
                     </div>
                     <div className="overflow-y-auto space-y-4 pr-1">
                         {displayedActivities.map((item, i) => (
-                            <div key={i} className="flex flex-col gap-1">
+                            <div key={item._id || i} className="flex flex-col gap-1">
                                 <div className="flex items-start gap-2 text-xs text-gray-500">
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
                                     <p><span className="font-bold text-gray-700">{item.user?._id === user?._id ? "You" : item.user?.name}</span> {item.action}</p>
@@ -111,20 +122,19 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
                     
                     <div className="overflow-y-auto space-y-4 pr-1">
                         {displayedComments.map((item, i) => (
-                            <div key={i} className="flex flex-col gap-1">
+                            <div key={item._id || i} className="flex flex-col gap-1">
                                 <div className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
                                     <p className="text-xs font-bold text-gray-800 mb-1">{item.user?.name}</p>
                                     <p className="text-sm text-gray-600 leading-tight mb-2">{item.text}</p>
                                     
-                                    {/* Render Attachments in Comments */}
                                     {item.attachments && item.attachments.length > 0 && (
                                         <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-gray-50">
                                             {item.attachments.map((file: any, idx: number) => (
                                                 <div key={idx} className="group relative">
                                                     {file.fileType?.startsWith('image/') ? (
-                                                        <img src={file.fileUrl} className="h-20 w-20 object-cover rounded-md border cursor-pointer hover:opacity-80" onClick={() => window.open(file.fileUrl, '_blank')} />
+                                                        <img src={file.fileUrl} className="h-20 w-20 object-cover rounded-md border cursor-pointer hover:opacity-80" onClick={() => window.open(file.fileUrl, '_blank')} alt="" />
                                                     ) : (
-                                                        <a href={file.fileUrl} target="_blank" className="flex items-center gap-1 text-[10px] bg-gray-100 p-1 rounded hover:bg-gray-200">
+                                                        <a href={file.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[10px] bg-gray-100 p-1 rounded hover:bg-gray-200">
                                                             <File size={12} /> {file.fileName.substring(0, 10)}...
                                                         </a>
                                                     )}
@@ -140,14 +150,14 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
                 </div>
             </div>
 
-            {/* --- INPUT WITH FILE PREVIEW --- */}
+            {/* --- INPUT --- */}
             <div className="p-4 bg-white border-t border-gray-100 shrink-0">
                 {selectedFiles.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2 p-2 bg-gray-50 rounded-md border border-dashed border-gray-200">
                         {selectedFiles.map((file, idx) => (
                             <div key={idx} className="relative group">
                                 {file.type.startsWith('image/') ? (
-                                    <img src={URL.createObjectURL(file)} className="h-12 w-12 object-cover rounded border" />
+                                    <img src={URL.createObjectURL(file)} className="h-12 w-12 object-cover rounded border" alt="" />
                                 ) : (
                                     <div className="h-12 w-12 flex items-center justify-center bg-white border rounded"><File size={20} /></div>
                                 )}
@@ -173,7 +183,6 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
                             <button onClick={() => fileInputRef.current?.click()} className="hover:text-blue-500 transition-colors">
                                 <Paperclip size={18} />
                             </button>
-                            
                         </div>
                         <button 
                             onClick={handleSendComment}
@@ -187,4 +196,4 @@ export const ActivityDetails = ({ editedTask }: ActivityDetailsProps) => {
             </div>
         </div>
     );
-};
+});

@@ -3,6 +3,7 @@ import { useCurrentUser } from './components/api/useCurrentUser'
 import { Auth } from './components/redux/features/User/Auth';
 import { useAppSelector } from './components/redux/app/hook';
 import { AdminDashboard } from './components/dashboard/AdminDashboard';
+import { GlobalTopLoader } from './components/context/GlobalTopLoader';
 
 function App() {
     const user = useAppSelector(state => state.login.user)
@@ -16,6 +17,8 @@ function App() {
         );
     }
     return (
+        <>
+        <GlobalTopLoader/>
         <Routes>
             <Route path="/" element={<Auth />} />
             <Route
@@ -31,6 +34,7 @@ function App() {
             
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </>
     )
 }
 

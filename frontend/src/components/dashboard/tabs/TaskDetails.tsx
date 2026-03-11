@@ -62,14 +62,10 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
     const [activeField, setActiveField] = useState<keyof Task | 'timeGoal' | 'dates' | null>(null);
     const [editedTask, setEditedTask] = useState<Partial<Task>>({ ...task });
     const [isdropdown, setIsdropdown] = useState(false);
-
     const boardDetails = useContext(BoardContext)
-
-
     const handleChange = (field: keyof Task, value: any) => {
         setEditedTask(prev => ({ ...prev, [field]: value }));
     };
-
     const handleFieldSave = () => {
         let finalUpdate: Partial<Task> = { ...editedTask };
 
@@ -137,6 +133,14 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
         High: "text-yellow-500",
         Critical: "text-red-500",
     };
+    const today = new Date().toISOString().split("T")[0]
+
+    const formatToISODate = (date: Date | string | undefined): string => {
+        if (!date) return ""
+        const d = new Date(date)
+        return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0]
+
+    }
 
     return (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
@@ -197,37 +201,53 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                 handleFieldSave={handleFieldSave}
                                 handleFieldCancel={handleFieldCancel}
                                 editComponent={
-                                    <UserSearchInput
-                                        onUserSelect={(selectedUser) => {
-                                            const current = Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo : [];
-                                            if (!current.some(u => u._id === selectedUser._id)) {
-                                                handleChange('assignedTo', [...current, selectedUser]);
-                                            }
-                                        }}
-                                        excludeUserIds={Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo.map(u => u._id) : []}
-                                        includeUserIds={boardDetails?.board?.members.map((m: any) => m._id)}
-                                    />
+                                    <div className="space-y-3 w-full">
+                                        {/* 1. Existing Users List (Removable) */}
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {Array.isArray(editedTask.assignedTo) && editedTask.assignedTo.map((u: any) => (
+                                                <div key={u._id} className="flex items-center gap-1 bg-indigo-50 border border-indigo-100 pl-1 pr-2 py-1 rounded-full">
+                                                    <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] text-white font-bold">
+                                                        {u.name?.trim()[0]?.toUpperCase()}
+                                                    </div>
+                                                    <span className="text-xs font-medium text-indigo-700">{u.name}</span>
+                                                    <button
+                                                        onClick={() => {
+                                                            const filtered = editedTask.assignedTo?.filter((user: any) => user._id !== u._id);
+                                                            handleChange('assignedTo', filtered);
+                                                        }}
+                                                        className="text-indigo-400 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <X size={12} weight="bold" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* 2. The Search Input to add new ones */}
+                                        <UserSearchInput
+                                            onUserSelect={(selectedUser) => {
+                                                const current = Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo : [];
+                                                if (!current.some(u => u._id === selectedUser._id)) {
+                                                    handleChange('assignedTo', [...current, selectedUser]);
+                                                }
+                                            }}
+                                            excludeUserIds={Array.isArray(editedTask.assignedTo) ? editedTask.assignedTo.map(u => u._id) : []}
+                                            includeUserIds={boardDetails?.board?.members.map((m: any) => m._id)}
+                                        />
+                                    </div>
                                 }
                             >
+                                {/* This is the "Read-Only" view */}
                                 <div className="flex -space-x-2">
-                                    {Array.isArray(editedTask.assignedTo) && editedTask.assignedTo.map((u: any) => (
-                                        <div key={u._id} title={u.name} className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm relative group/avatar">
-                                            {u.name?.trim()[0]?.toUpperCase()}
-
-                                            {activeField === 'assignedTo' && (
-                                                <button
-                                                    onClick={() => {
-                                                        const filtered = editedTask.assignedTo?.filter((user: any) => user._id !== u._id);
-                                                        handleChange('assignedTo', filtered);
-                                                    }}
-                                                    className="absolute -top-1 -right-1 bg-red-500 rounded-full text-white p-0.5 hover:bg-red-600 shadow-sm"
-                                                >
-                                                    <X size={8} weight="bold" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {(!editedTask.assignedTo || editedTask.assignedTo.length === 0) && <span className="text-sm text-gray-400">Unassigned</span>}
+                                    {Array.isArray(editedTask.assignedTo) && editedTask.assignedTo.length > 0 ? (
+                                        editedTask.assignedTo.map((u: any) => (
+                                            <div key={u._id} title={u.name} className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold shadow-sm">
+                                                {u.name?.trim()[0]?.toUpperCase()}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span className="text-sm text-gray-400">Unassigned</span>
+                                    )}
                                 </div>
                             </EditableRow>
 
@@ -237,8 +257,8 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                                 handleFieldSave={handleFieldSave} handleFieldCancel={handleFieldCancel}
                                 editComponent={
                                     <div className="flex gap-2">
-                                        <input type="date" className="text-xs border p-1 rounded" value={formatDate(editedTask.startDate)} onChange={(e) => handleChange('startDate', e.target.value)} />
-                                        <input type="date" className="text-xs border p-1 rounded" value={formatDate(editedTask.dueDate)} onChange={(e) => handleChange('dueDate', e.target.value)} />
+                                        <input type="date" min={formatToISODate(editedTask.startDate) || today} className="text-xs border p-1 rounded" value={formatToISODate(editedTask.startDate)} onChange={(e) => handleChange('startDate', e.target.value)} />
+                                        <input type="date" min={formatToISODate(editedTask.dueDate) || today} className="text-xs border p-1 rounded" value={formatToISODate(editedTask.dueDate)} onChange={(e) => handleChange('dueDate', e.target.value)} />
                                     </div>
                                 }
                             >
@@ -436,7 +456,7 @@ export const TaskDetails = ({ task, status, onClose }: TaskDetailsProps) => {
                         </section>
                     </div>
                     <div className="bg-gray-50/30 h-full overflow-hidden">
-                        <ActivityDetails editedTask={editedTask} />
+                        <ActivityDetails taskId={editedTask._id} />
                     </div>
 
                 </div>

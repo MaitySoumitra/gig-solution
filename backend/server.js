@@ -42,13 +42,8 @@ const io = new Server(server, {
   },
 });
 
-io.on("connection", (socket) => {
-  
-
-  socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-  });
-});
+const socketHandler = require("./socket");
+socketHandler(io);
 
 /* ================= ROUTES ================= */
 app.use("/api/users", require("./routes/userRoutes"));

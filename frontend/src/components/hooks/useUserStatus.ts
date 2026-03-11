@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { UserStatus } from "../utils/userStatus";
+import type { UserStatus } from "../types/allType";
 
 
 export function useUserStatus(userId?: string) {

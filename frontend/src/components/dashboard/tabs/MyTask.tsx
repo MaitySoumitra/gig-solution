@@ -1,20 +1,9 @@
-import {  useState } from "react"; // Added useState
 import { useAppSelector } from "../../redux/app/hook";
-
 import { Timer } from "../Home/Timer";
-import { TaskDetails } from "./TaskDetails"; // Import your TaskDetails component
-import type { Task } from "../../types/allType";
-
 export const MyTask = () => {
     
     const task = useAppSelector(state => state.task.task);
     const user = useAppSelector(state => state.login.user);
-
-    // --- NEW STATE FOR MODAL ---
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-
-  
-
     const formatHours = (ms: number) => (ms / 3600000).toFixed(1) + "h";
 
     return (
@@ -29,8 +18,8 @@ export const MyTask = () => {
                     <div 
                         key={t._id} 
                         // --- ADDED CLICK HANDLER ---
-                        onClick={() => setSelectedTask(t)}
-                        className="group p-5 border border-gray-100 rounded-2xl bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer"
+                      
+                        className="group p-5 border border-gray-100 rounded-2xl bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all"
                     >
                         <div className="flex justify-between items-center">
                             <div className="space-y-1">
@@ -80,22 +69,12 @@ export const MyTask = () => {
                         </div>
                     </div>
                 ))}
-
                 {task.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                         <p className="text-gray-400 font-medium">No tasks assigned to you yet.</p>
                     </div>
                 )}
             </div>
-
-            {/* --- RENDER MODAL IF TASK IS SELECTED --- */}
-            {selectedTask && (
-                <TaskDetails 
-                    task={selectedTask} 
-                    status={selectedTask.column?.name || "Task"} 
-                    onClose={() => setSelectedTask(null)} 
-                />
-            )}
         </div>
     );
 };

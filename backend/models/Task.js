@@ -140,33 +140,18 @@ TaskSchema.pre('save', async function (next) {
 
 TaskSchema.post('save', async function (doc) {
     if (!doc._userContext) return;
-
     const lastActivity = doc.activityLog[doc.activityLog.length - 1];
     if (!lastActivity) return;
-
     try {
-        const User = mongoose.model('User');
-        
-        // 1. Fetch EVERY user ID in the system
-        const allUsers = await User.find({}).select('_id');
-        
-        // 2. Map them to notification objects
-        const notifications = allUsers.map(user => ({
-            recipient: user._id,
+        const Notification = mongoose.model('Notification');
+        await Notification.create({
+            board: doc.board,
             sender: doc._userContext,
             task: doc._id,
-            action: lastActivity.action,
-            isRead: false
-        }));
-
-        // 3. Insert all at once
-        if (notifications.length > 0) {
-            await Notification.insertMany(notifications);
-            
-        }
+            action: lastActivity.action
+        });
     } catch (err) {
         console.error("Global Notification Error:", err.message);
     }
 });
-
 module.exports = mongoose.model('Task', TaskSchema)

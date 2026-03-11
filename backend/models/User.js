@@ -17,7 +17,11 @@ const userSchema = new Schema({
     memberOfBoards: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Board"
-    }]
+    }],
+    status: {
+        type: String,
+        default: null
+    }
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

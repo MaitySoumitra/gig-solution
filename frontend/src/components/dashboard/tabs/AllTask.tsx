@@ -1,41 +1,26 @@
-import { useState } from 'react'; // Added useState
 import {  useAppSelector } from '../../redux/app/hook';
-import { TaskDetails } from './TaskDetails'; // Import your TaskDetails component
 import {
     Clock,
     WarningCircle,
     Users,
     ChartBar,
     CalendarBlank,
-    Tray,
     Hourglass,
-    SealCheck
+   
 } from '@phosphor-icons/react';
+import { getAvatarColor } from "../../utils/avatarColor";
+import { getColumnColor } from "../../utils/columnColors"; 
 
 export const AllTask = () => {
-    
     const { task: tasks, loading } = useAppSelector((state) => state.task);
-    const [selectedTask, setSelectedTask] = useState<any>(null);
     const msToHours = (ms: number = 0) => (ms / 3600000).toFixed(1);
-
     const calculateProgress = (timeManagement: any) => {
         const goalMs = (timeManagement?.estimatedTime || 0) * 3600000;
         const loggedMs = timeManagement?.totalLoggedTime || 0;
         const percent = goalMs > 0 ? Math.min((loggedMs / goalMs) * 100, 100) : 0;
         const isOvertime = loggedMs > goalMs && goalMs > 0;
         const overtimeMs = isOvertime ? loggedMs - goalMs : 0;
-
         return { percent, isOvertime, overtimeHours: msToHours(overtimeMs) };
-    };
-
-    const getPriorityStyle = (priority: string) => {
-        switch (priority) {
-            case 'Critical': return 'bg-red-100 text-red-700 border-red-200';
-            case 'High': return 'bg-orange-100 text-orange-700 border-orange-200';
-            case 'Medium': return 'bg-blue-100 text-blue-700 border-blue-200';
-            case 'Low': return 'bg-green-100 text-green-700 border-green-200';
-            default: return 'bg-gray-100 text-gray-700 border-gray-200';
-        }
     };
 
     if (loading === 'pending') {
@@ -48,119 +33,177 @@ export const AllTask = () => {
             </div>
         );
     }
-
     return (
         <div className="p-4 sm:p-6 bg-gray-50 min-h-screen font-sans">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                        <Tray size={28} weight="duotone" className="text-indigo-600" />
-                        Global Task Overview
-                    </h1>
-                    <p className="text-gray-500 text-sm">Real-time resource and time tracking across all boards.</p>
-                </div>
-                <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex items-center gap-3">
-                    <ChartBar size={20} weight="fill" className="text-indigo-500" />
-                    <span className="text-sm font-bold text-gray-700">{tasks?.length || 0} Active Tasks</span>
-                </div>
-            </div>
+            <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold font-black text-black">
+            Global Task Overview
+          </h1>
+          <p className="text-gray-500 text-sm mt-2">
+            Real-time resource and time tracking across all boards.
+          </p>
+        </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50/50 border-b border-gray-200">
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Identify</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Team</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Urgency</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Time Progress</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Timeline</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {tasks.map((t: any) => {
-                                const { percent, isOvertime, overtimeHours } = calculateProgress(t.timeManagement);
+        <div className="bg-black px-5 py-2 rounded-full border border-black/10 shadow-sm flex items-center gap-3">
+          <ChartBar size={18} weight="fill" className="text-white" />
+          <span className="text-sm font-semibold text-white">
+            {tasks?.length || 0} Active Tasks
+          </span>
+        </div>
+      </div>
 
-                                return (
-                                    <tr key={t._id} 
-                                        onClick={() => setSelectedTask(t)}
-                                        className="hover:bg-slate-50/50 transition-all group cursor-pointer"
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-gray-800">{t.title}</span>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className="text-[10px] font-black text-indigo-500 uppercase">{t.board?.name || "No Board"}</span>
-                                                    <span className="text-gray-300 text-[10px]">•</span>
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5 py-0.5 bg-slate-100 rounded">
-                                                        {t.column?.name || "No Status"}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex -space-x-2">
-                                                {t.assignedTo?.length > 0 ? (
-                                                    t.assignedTo.map((user: any) => (
-                                                        <div key={user._id} title={user.name} className="h-7 w-7 rounded-full border-2 border-white bg-indigo-600 flex items-center justify-center text-white font-bold text-[9px]">
-                                                            {user.name?.charAt(0).toUpperCase() || 'U'}
-                                                        </div>
-                                                    ))
-                                                ) : <Users size={18} className="text-gray-300" />}
-                                            </div>
-                                        </td>
-                                        
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase ${getPriorityStyle(t.priority)}`}>
-                                                {t.priority}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 min-w-[200px]">
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase">
-                                                        <Hourglass size={12} /> {msToHours(t.timeManagement?.totalLoggedTime)}h / {t.timeManagement?.estimatedTime || 0}h
-                                                    </span>
-                                                    {isOvertime ? (
-                                                        <span className="text-[9px] font-black text-rose-500 flex items-center gap-1 uppercase">
-                                                            <WarningCircle weight="fill" size={12} className="animate-pulse" />
-                                                            +{overtimeHours}h Over
-                                                        </span>
-                                                    ) : percent === 100 ? (
-                                                        <SealCheck weight="fill" size={14} className="text-emerald-500" />
-                                                    ) : null}
-                                                </div>
-                                                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden relative">
-                                                    <div
-                                                        className={`h-full transition-all duration-1000 ${isOvertime ? 'bg-rose-500' : 'bg-indigo-500'}`}
-                                                        style={{ width: `${percent}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </td>
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden ">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead className="bg-black text-left ">
+              <tr>
+                <th className="px-6 py-4 text-sm font-semibold text-white uppercase tracking-widest">
+                  Identify
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-white uppercase tracking-widest">
+                  Team
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-white uppercase tracking-widest">
+                  Urgency
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-white uppercase tracking-widest">
+                  Time Progress
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-white uppercase tracking-widest">
+                  Timeline
+                </th>
+              </tr>
+            </thead>
 
-                                        <td className="px-6 py-4 text-gray-500">
-                                            <div className="flex items-center gap-2">
-                                                <CalendarBlank size={14} />
-                                                <span className="text-xs font-medium">
-                                                    {t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'No Date'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {selectedTask && (
-                <TaskDetails 
-                    task={selectedTask} 
-                    status={selectedTask.column?.name || "Task"} 
-                    onClose={() => setSelectedTask(null)} 
-                />
-            )}
+            <tbody>
+              {tasks.map((t: any, index: number) => {
+                const { percent, isOvertime, overtimeHours } =
+                  calculateProgress(t.timeManagement);
+                const columnStyle = getColumnColor(
+                  t.column?.name || "No Status"
+                );
+
+                return (
+                  <tr
+                    key={t._id}
+                    className={`${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-100"
+                    } hover:bg-gray-200 transition-all`}
+                  >
+                    {/* IDENTIFY */}
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-base font-bold capitalize text-black">
+                          {t.title}
+                        </span>
+
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs font-semibold capitalize text-gray-600">
+                            {t.board?.name || "No Board"}
+                          </span>
+
+                          <span className="text-gray-300">•</span>
+
+                          {/* ✅ FIXED BADGE */}
+                          <span
+                            className={`
+                              text-[8px] px-2 py-0.5 rounded-full
+                              font-semibold uppercase
+                              ${columnStyle.bg}
+                              ${columnStyle.text}
+                              ${columnStyle.border}
+                            `}
+                          >
+                            {t.column?.name || "No Status"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* TEAM */}
+                    <td className="px-6 py-5">
+                      <div className="flex -space-x-2">
+                        {t.assignedTo?.length > 0 ? (
+                          t.assignedTo.map((user: any, i: number) => (
+                            <div
+                              key={user._id}
+                              className="h-9 w-9 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                              style={{
+                                backgroundColor: getAvatarColor(
+                                  user.name || i
+                                ),
+                              }}
+                            >
+                              {user.name?.charAt(0).toUpperCase()}
+                            </div>
+                          ))
+                        ) : (
+                          <Users size={18} className="text-gray-400" />
+                        )}
+                      </div>
+                    </td>
+
+                    {/* URGENCY */}
+                    <td className="px-6 py-5">
+                      <span className="px-3 py-1 text-[10px] font-bold rounded-full uppercase bg-black/10 text-black">
+                        {t.priority}
+                      </span>
+                    </td>
+
+                    {/* TIME PROGRESS */}
+                    <td className="px-6 py-5 min-w-[220px]">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex justify-between text-xs font-semibold text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <Hourglass size={12} />
+                            {msToHours(
+                              t.timeManagement?.totalLoggedTime
+                            )}h /{" "}
+                            {t.timeManagement?.estimatedTime || 0}h
+                          </span>
+
+                          {isOvertime && (
+                            <span className="text-rose-500 text-xs font-bold flex items-center gap-1">
+                              <WarningCircle weight="fill" size={12} />
+                              +{overtimeHours}h
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="w-full h-2 bg-black/10 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 ${
+                              isOvertime ? "bg-rose-500" : "bg-black"
+                            }`}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* TIMELINE */}
+                    <td className="px-6 py-5 text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <CalendarBlank size={14} />
+                        <span className="text-sm font-medium">
+                          {t.dueDate
+                            ? new Date(t.dueDate).toLocaleDateString(
+                                "en-GB",
+                                { day: "2-digit", month: "short" }
+                              )
+                            : "No Date"}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+            
         </div>
     );
 };

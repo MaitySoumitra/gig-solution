@@ -2,9 +2,11 @@ const mongoose = require('mongoose');
 const { Schema } = require('mongoose');
 
 const notificationSchema = new Schema({
-    recipient: { 
+    // REMOVE recipient: { type: Schema.Types.ObjectId, ... }
+    
+    board: { 
         type: Schema.Types.ObjectId, 
-        ref: 'User', 
+        ref: 'Board', 
         required: true 
     },
     sender: { 
@@ -19,14 +21,14 @@ const notificationSchema = new Schema({
     action: { 
         type: String, 
         required: true 
-    }, // e.g., "added a comment" or "changed priority"
-    isRead: { 
-        type: Boolean, 
-        default: false 
-    }
+    },
+    // We use an array of user IDs who have read it, rather than a single boolean
+    readBy: [{ 
+        type: Schema.Types.ObjectId, 
+        ref: 'User' 
+    }]
 }, { timestamps: true });
 
-// Indexing for faster lookups when a user opens their notifications
-notificationSchema.index({ recipient: 1, isRead: 1 });
+notificationSchema.index({ board: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

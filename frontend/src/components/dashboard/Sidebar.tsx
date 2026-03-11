@@ -50,10 +50,11 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
     const handleDelete = async (boardId: string) => {
         try {
             await dispatch(deleteBoard({ boardId })).unwrap();
-
             setTaskToDelete(null);
 
-            alert("Task deleted successfully"); // replace with toast later
+            // FIX: Redirect to Home/Dashboard after deletion
+            navigate(dashboardBase, { replace: true });
+
         } catch (error) {
             console.error("Delete failed", error);
         }
@@ -61,30 +62,26 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
     const handleEditSubmit = async () => {
         if (!editName.trim()) return;
         try {
-            await dispatch(editBoard({
+            const updatedBoard = await dispatch(editBoard({
                 boardId: boardToEdit._id,
                 name: editName
             })).unwrap();
 
-            setBoardToEdit(null); // Close modal
-            setEditName(""); // Clear input
-            alert("Board updated successfully");
+            setBoardToEdit(null);
+            setEditName("");
+
+            // FIX: Update the URL to the new slug immediately
+            const newSlug = slugify(updatedBoard.name);
+            navigate(`${dashboardBase}/${newSlug}`, { replace: true });
+
         } catch (error) {
             console.error("Edit failed", error);
         }
     };
-
-
-
     const handleLogout = async () => {
         await dispatch(logoutUser()).unwrap();
         navigate("/", { replace: true });
     };
-
-    if (role === 'admin' || role === 'super-admin') {
-
-    }
-
     const onClose = () => {
         setCreateBoard(false)
     }
@@ -155,29 +152,34 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
 
                     {showBoard && !collapsed && (
                         <div className="ml-8 space-y-1">
-                            {board.map(b => {
-                                const isMenuOpen = openMenuId === b._id
+                            {board.map((b) => {
+                                const isMenuOpen = openMenuId === b._id;
+                                const boardSlug = slugify(b.name);
                                 return (
                                     <div key={b._id} className="relative group">
                                         <NavLink
-
-                                            to={`${dashboardBase}/${slugify(b.name)}`}
+                                            to={`${dashboardBase}/${boardSlug}`}
                                             className={({ isActive }) =>
-                                                `block h-9 px-3 text-xs rounded-md flex items-center justify-between ${isActive
+                                                `block h-9 px-3 text-xs rounded-md flex items-center justify-between transition-colors ${isActive
                                                     ? "bg-gray-400 text-white"
-                                                    : "hover:bg-gray-400 hover:text-white"
+                                                    : "hover:bg-gray-400 hover:text-white text-gray-700"
                                                 }`
                                             }
                                         >
-                                            {role === 'admin' || role === 'super-admin' ? (<>{b.name} <button onClick={(e) => {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                                setOpenMenuId(isMenuOpen ? null : b._id)
-                                            }}
-                                                className='rounded-full hover:bg-white hover:text-black p-[5px]'
-                                            >
-                                                <DotsThreeVerticalIcon className="text-black" />
-                                            </button></>) : (<>{b.name}</>)}
+                                            <span className="truncate mr-2">{b.name}</span>
+
+                                            {(role === "admin" || role === "super-admin") && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault(); 
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(isMenuOpen ? null : b._id);
+                                                    }}
+                                                    className="rounded-full hover:bg-white hover:text-black p-[2px] transition-colors"
+                                                >
+                                                    <DotsThreeVerticalIcon size={20} weight="bold" />
+                                                </button>
+                                            )}
                                         </NavLink>
                                         {isMenuOpen && (
                                             <>
@@ -189,9 +191,9 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setBoardToEdit(b); // Set the board object
-                                                            setEditName(b.name); // Pre-fill the input with current name
-                                                            setOpenMenuId(null); // Close the dropdown menu
+                                                            setBoardToEdit(b);
+                                                            setEditName(b.name);
+                                                            setOpenMenuId(null);
                                                         }}
                                                         className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                                     >
@@ -200,20 +202,18 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setTaskToDelete(b); // Opens your existing delete modal
+                                                            setTaskToDelete(b);
                                                             setOpenMenuId(null);
                                                         }}
                                                         className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
                                                     >
                                                         Delete
                                                     </button>
-
                                                 </div>
                                             </>
                                         )}
                                     </div>
-
-                                )
+                                );
                             })}
                         </div>
                     )}
@@ -277,7 +277,6 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
                     </div>
                 </div>
             )}
-
             {showAddUser && (
                 <AddUserModal onClose={() => setShowAddUser(false)} />
             )}
@@ -314,8 +313,6 @@ export const Sidebar = ({ collapsed, setCollapsed }: SidebarProps) => {
                     </div>
                 </div>
             )}
-
-            {/* EDIT BOARD MODAL */}
             {boardToEdit && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl p-6 w-96 shadow-lg" onClick={(e) => e.stopPropagation()}>

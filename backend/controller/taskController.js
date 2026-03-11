@@ -4,6 +4,7 @@ const Board = require('../models/Board')
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+const Notification = require('../models/Notification');
 
 const createTask = async (req, res) => {
   const { boardId, columnId } = req.params;
@@ -58,7 +59,6 @@ const moveTask = async (req, res) => {
   const taskId = req.params.taskId;
 
   try {
-    // IMPORTANT: You must populate 'column' to get the .title for the activity log
     const task = await Task.findById(taskId).populate('column');
     if (!task) return res.status(404).json({ message: "Task not found" });
 
@@ -68,17 +68,27 @@ const moveTask = async (req, res) => {
     if (String(oldColumnId) !== String(newColumnId)) {
       const newCol = await Column.findById(newColumnId);
 
-      // Now oldColumnTitle will work because we populated above
+      // Add to activity log
       task.activityLog.push({
         user: req.user._id,
         action: `Moved status from "${oldColumnTitle}" to "${newCol.name}"`
       });
 
+      // Set new column
       task.column = newColumnId;
 
-      // Update the Column documents references
+      // Update Columns
       await Column.findByIdAndUpdate(oldColumnId, { $pull: { tasks: taskId } });
       await Column.findByIdAndUpdate(newColumnId, { $push: { tasks: taskId } });
+
+      // 💡 Create Notification
+      await Notification.create({
+        sender: req.user._id,
+        board: task.board,
+        task: task._id,
+        action: `Moved task "${task.title}" from "${oldColumnTitle}" to "${newCol.name}"`
+      });
+
     } else {
       task.activityLog.push({
         user: req.user._id,
@@ -86,10 +96,11 @@ const moveTask = async (req, res) => {
       });
     }
 
+    // Update position
     task.position = newPosition;
     await task.save();
 
-    // 3. Reindex NEW column tasks
+    // Reindex new column tasks
     const allTasksInCol = await Task.find({
       column: newColumnId,
       _id: { $ne: taskId }
@@ -106,7 +117,7 @@ const moveTask = async (req, res) => {
       }))
     );
 
-    // 4. Reindex OLD column if needed
+    // Reindex old column if moved
     if (String(oldColumnId) !== String(newColumnId)) {
       const oldColTasks = await Task.find({ column: oldColumnId }).sort('position');
       await Task.bulkWrite(
@@ -119,7 +130,13 @@ const moveTask = async (req, res) => {
       );
     }
 
-    res.status(200).json({ success: true });
+    const updatedTask = await Task.findById(taskId)
+      .populate('assignedTo', 'name email')
+      .populate('activityLog.user', 'name')
+      .populate('column', 'name');
+
+    res.status(200).json(updatedTask);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Database update failed" });
@@ -132,17 +149,28 @@ const updateTask = async (req, res) => {
 
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // IMPORTANT: Setup context for the Pre-save hook
     task._userContext = req.user._id;
-    task._originalValues = JSON.parse(JSON.stringify(task));
+    
+    // Capture original values before applying updates so the hook can compare them
+    task._originalValues = task.toObject(); 
+
+    // Apply updates
     Object.keys(updates).forEach((key) => {
       task[key] = updates[key];
     });
 
+    // Save triggers the pre('save') hook in your schema
+    
     await task.save();
 
+    // Re-fetch with population so the UI gets the new activity log WITH user names
     const populatedTask = await Task.findById(taskId)
       .populate('assignedTo', 'name email')
-      .populate('activityLog.user', 'name');
+      .populate('activityLog.user', 'name') 
+      .populate('comments.user', 'name profilePicture')
+      .populate('column', 'name');
 
     res.status(200).json(populatedTask);
   } catch (err) {

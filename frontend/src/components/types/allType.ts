@@ -1,8 +1,12 @@
 export type User = {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  status?: UserStatus;
+  phone?: string;
+  updatedAt?: string;
+    createdAt?: string;
 };
 
 export type Column = {
@@ -11,6 +15,14 @@ export type Column = {
     board: string;
     tasks:Task[]
 };
+export type UserStatus =
+  | "lunch"
+  | "sick"
+  | "dnd"
+  | "meeting"
+  | "travelling"
+  | "short-break"
+  | null;
 
 export type Board = {
     _id: string;

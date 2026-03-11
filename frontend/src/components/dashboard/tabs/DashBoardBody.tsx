@@ -13,39 +13,23 @@ import {
 import { TaskDetails } from "./TaskDetails";
 import { useAppSelector } from "../../redux/app/hook";
 import { BoardContext } from "../../context/BoardContext";
- 
-const BOARD_COLORS = [
-  { header: "bg-blue-600", bg: "bg-blue-50" },
-  { header: "bg-green-600", bg: "bg-green-50" },
-  { header: "bg-yellow-500", bg: "bg-yellow-50" },
-  { header: "bg-purple-600", bg: "bg-purple-50" },
-  { header: "bg-pink-600", bg: "bg-pink-50" },
-  { header: "bg-indigo-600", bg: "bg-indigo-50" },
-];
- 
-const getAvatarColor = (name: string) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return { backgroundColor: `hsl(${hue}, 70%, 55%)` };
-};
- 
+import { getColumnColor } from "../../utils/columnColors";
+import { getAvatarColor } from "../../utils/avatarColor";
+
 export const DashBoardBody = () => {
   const [showColumnInput, setShowColumnInput] = useState(false);
   const [columnName, setColumnName] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [openMenuColumn, setOpenMenuColumn] = useState<string | null>(null);
   const [popupColumnId, setPopupColumnId] = useState<string | null>(null);
- 
+
   const columnMenuRef = useRef<HTMLDivElement | null>(null);
   const columnInputRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
- 
+
   const columns = useAppSelector((state) => state.column.columns);
   const boardDetails = useContext(BoardContext);
- 
+
   // Handle outside clicks for menus and inputs
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -60,7 +44,7 @@ export const DashBoardBody = () => {
     window.addEventListener("mousedown", handleClickOutside);
     return () => window.removeEventListener("mousedown", handleClickOutside);
   }, []);
- 
+
   // Horizontal Scroll with Mouse Wheel
   useEffect(() => {
     const el = scrollRef.current;
@@ -74,25 +58,25 @@ export const DashBoardBody = () => {
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
   }, []);
- 
+
   if (!boardDetails || !boardDetails.board) return null;
   const { board, addColumn, deleteColumn, moveTask, task } = boardDetails;
   const currentColumns: Column[] = columns[board._id] || [];
- 
+
   const taskStatus = (t: Task) => {
     const colId = typeof t.column === "object" ? t.column?._id : t.column;
     return currentColumns.find((c) => c._id === colId)?.name || null;
   };
- 
+
   return (
     <div className="relative h-full px-6 pt-6">
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto no-scrollbar pb-6 mt-2 items-start"
       >
-        {currentColumns.map((c, colIndex) => {
-          const color = BOARD_COLORS[colIndex % BOARD_COLORS.length];
- 
+        {currentColumns.map((c) => {
+          const color = getColumnColor(c.name);
+
           // Robust filtering logic from your "working" file
           const tasksInColumn = task
             .filter((t) => {
@@ -101,7 +85,7 @@ export const DashBoardBody = () => {
               return taskColumnId?.toString() === c._id?.toString();
             })
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
- 
+
           return (
             <div
               key={c._id}
@@ -123,7 +107,7 @@ export const DashBoardBody = () => {
                   <span className="w-2 h-2 border-2 border-white rounded-full" />
                   {c.name}
                 </div>
- 
+
                 <div className="flex items-center gap-2">
                   <span
                     className={`text-xs font-semibold text-white ${color.header} px-2 py-1 rounded-full shadow-sm`}
@@ -160,7 +144,7 @@ export const DashBoardBody = () => {
                   </div>
                 </div>
               </div>
- 
+
               {/* TASK CARDS */}
               <div className="space-y-3 min-h-[50px]">
                 {tasksInColumn.map((t, index) => (
@@ -181,17 +165,17 @@ export const DashBoardBody = () => {
                     className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg border border-gray-100 hover:border-gray-200 transition-all cursor-pointer group"
                   >
                     {/* TITLE */}
-                    <h3 className="font-semibold text-sm text-gray-800 group-hover:text-gray-900 transition">
+                    <h3 className="font-semibold text-sm text-gray-800 group-hover:text-gray-900 transition capitalize">
                       {t.title}
                     </h3>
- 
+
                     {/* DESCRIPTION */}
                     {t.description && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2 capitalize">
                         {t.description}
                       </p>
                     )}
- 
+
                     {/* ASSIGNED USERS */}
                     {t.assignedTo && t.assignedTo.length > 0 && (
                       <div className="flex -space-x-2 mt-3">
@@ -200,7 +184,7 @@ export const DashBoardBody = () => {
                             <div
                               key={u._id}
                               title={u.name}
-                              style={getAvatarColor(u.name)}
+                              style={{ backgroundColor: getAvatarColor(u.name) }}
                               className="w-7 h-7 rounded-full text-white text-[11px] font-bold flex items-center justify-center border-2 border-white"
                             >
                               {u.name.charAt(0).toUpperCase()}
@@ -209,57 +193,52 @@ export const DashBoardBody = () => {
                         )}
                       </div>
                     )}
- 
-                    {/* DATES + PRIORITY */}
+
                     <div className="flex items-center justify-between mt-4 text-[11px] font-medium">
-                      {/* DATE RANGE */}
                       <div className="flex items-center gap-1 text-gray-900">
                         <CalendarBlank size={14} />
                         {t.startDate || t.dueDate ? (
                           <>
                             {t.startDate
                               ? new Date(t.startDate).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                  },
-                                )
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )
                               : "-"}
                             {" - "}
                             {t.dueDate
                               ? new Date(t.dueDate).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                  },
-                                )
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )
                               : "-"}
                           </>
                         ) : (
                           "-"
                         )}
                       </div>
- 
-                      {/* PRIORITY BADGE */}
                       <div
                         className={`flex items-center gap-1 font-semibold px-2 py-1 rounded-full text-[10px]
-      ${
-        t.priority === "High"
-          ? "bg-red-100 text-red-600"
-          : t.priority === "Medium"
-            ? "bg-yellow-100 text-yellow-600"
-            : t.priority === "Low"
-              ? "bg-green-100 text-green-600"
-              : "bg-gray-100 text-gray-600"
-      }`}
+      ${t.priority === "High"
+                            ? "bg-red-100 text-red-600"
+                            : t.priority === "Medium"
+                              ? "bg-yellow-100 text-yellow-600"
+                              : t.priority === "Low"
+                                ? "bg-green-100 text-green-600"
+                                : "bg-gray-100 text-gray-600"
+                          }`}
                       >
                         <Flag size={12} weight="fill" />
                         {t.priority || "None"}
                       </div>
                     </div>
- 
+
                     {/* BOTTOM SECTION */}
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-900">
                       {/* COMMENTS + ATTACHMENTS */}
@@ -268,13 +247,13 @@ export const DashBoardBody = () => {
                           <ChatCircle size={14} />
                           {t.comments?.length ?? 0}
                         </div>
- 
+
                         <div className="flex items-center gap-1">
                           <Paperclip size={14} />
                           {t.attachments?.length ?? 0}
                         </div>
                       </div>
- 
+
                       {/* LOGGED TIME */}
                       <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded">
                         <Clock size={12} />
@@ -284,7 +263,7 @@ export const DashBoardBody = () => {
                   </div>
                 ))}
               </div>
- 
+
               <button
                 onClick={() => setPopupColumnId(c._id)}
                 className="w-full mt-4 py-2 flex items-center justify-center gap-2 text-xs font-bold text-gray-900 hover:text-gray-900  rounded-full border-1 border-dashed border-gray-900 transition-all"
@@ -294,7 +273,7 @@ export const DashBoardBody = () => {
             </div>
           );
         })}
- 
+
         {/* ADD COLUMN SECTION */}
         <div className="min-w-[220px] flex items-start">
           {!showColumnInput ? (
@@ -347,7 +326,7 @@ export const DashBoardBody = () => {
           )}
         </div>
       </div>
- 
+
       {/* MODAL: CREATE TASK */}
       {popupColumnId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -375,8 +354,6 @@ export const DashBoardBody = () => {
           </div>
         </div>
       )}
- 
-      {/* MODAL: TASK DETAILS */}
       {selectedTask && (
         <TaskDetails
           status={taskStatus(selectedTask)}
@@ -387,4 +364,3 @@ export const DashBoardBody = () => {
     </div>
   );
 };
- 
