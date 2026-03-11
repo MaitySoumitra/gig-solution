@@ -4,6 +4,7 @@ import {
 } from "@phosphor-icons/react"
 import { BoardContext } from '../../context/BoardContext'
 import type { Task } from '../../types/allType'
+import { DeleteBoardModal } from '../../modal/DeleteModal'
 
 interface TaskDetailsHeaderProps {
     onClose: () => void
@@ -12,6 +13,7 @@ interface TaskDetailsHeaderProps {
 
 export const TaskDetailsHeader = ({ task, onClose }: TaskDetailsHeaderProps) => {
     const [openTaskId, setOpenTaskId] = useState<string | null>(null)
+    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
     const dropdownRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
@@ -72,34 +74,28 @@ export const TaskDetailsHeader = ({ task, onClose }: TaskDetailsHeaderProps) => 
                                 >
                                     <DotsThree size={20} weight="bold" />
                                 </button>
-                                
+
                                 {/* ... inside the dropdown logic ... */}
-{openTaskId === task._id && deleteTask && (
-    <div className='absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50'>
-        <button
-            className='w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50'
-            onClick={() => {
-                // 1. Trigger the delete action from Context
-                deleteTask(task._id);
-                
-                // 2. Close the dropdown state
-                setOpenTaskId(null);
-                
-                // 3. IMPORTANT: Close the TaskDetails modal itself
-                onClose(); 
-            }}
-        >
-            Delete
-        </button>
-    </div>
-)}
+                                {openTaskId === task._id && deleteTask && (
+                                    <div className='absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50'>
+                                        <button
+                                            className='w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50'
+                                            onClick={() => {
+                                                setTaskToDelete(task)
+                                                setOpenTaskId(null)
+                                            }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                            
+
                             {/* Actions that don't strictly require context */}
                             <button className="p-2 hover:bg-gray-100 rounded text-gray-500"><Star size={20} /></button>
                             <button className="p-2 hover:bg-gray-100 rounded text-gray-500"><ArrowSquareOut size={20} /></button>
                             <button className="p-2 hover:bg-gray-100 rounded text-gray-500"><CornersOut size={20} /></button>
-                            
+
                             {/* Close Button: Always works regardless of context */}
                             <button
                                 onClick={onClose}
@@ -111,6 +107,15 @@ export const TaskDetailsHeader = ({ task, onClose }: TaskDetailsHeaderProps) => 
                     </div>
                 </div>
             </div>
+            <DeleteBoardModal
+                board={taskToDelete}
+                onCancel={() => setTaskToDelete(null)}
+                onConfirm={(id) => {
+                    if (deleteTask) deleteTask(id)
+                    setTaskToDelete(null)
+                    onClose()
+                }}
+            />
         </div>
     )
 }
